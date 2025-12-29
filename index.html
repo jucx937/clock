@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級多功能鬧鐘系統 - 簡化版</title>
+    <title>班級鬧鐘系統 - 進階控制版</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #eef2f7; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -10,11 +10,11 @@
         .setup-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #dee2e6; }
         .input-group { margin-bottom: 10px; }
         label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #555; }
-        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 5px; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn { border: none; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 5px; }
         .btn-system { background-color: #1a73e8; color: white; }
         .btn-add { background-color: #34a853; color: white; }
-        .btn-stop { background-color: #dc3545; color: white; display: none; } /* 預設隱藏 */
+        .btn-stop { background-color: #dc3545; color: white; display: none; padding: 15px; font-size: 1.2rem; }
         .alarm-item { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .active-alarm { animation: blink 0.5s infinite; }
         @keyframes blink { 50% { background-color: #ffcccc; } }
@@ -26,17 +26,27 @@
     <h2 style="text-align:center;">班級鬧鐘系統</h2>
     <div id="clock" class="time-now">00:00:00</div>
 
-    <button id="systemBtn" class="btn btn-system" onclick="toggleSystem()">1. 點擊授權聲音並啟動</button>
-    <button id="stopBtn" class="btn btn-stop" onclick="stopAlarm()">🛑 停止鬧鐘</button>
+    <button id="systemBtn" class="btn btn-system" onclick="toggleSystem()">1. 點擊授權聲音並啟動系統</button>
+    <button id="stopBtn" class="btn btn-stop" onclick="stopAlarm()">🛑 立即關閉鬧鐘</button>
 
     <div class="setup-box">
         <div class="input-group">
-            <label>設定鬧鐘名稱 (選填)：</label>
+            <label>設定鬧鐘名稱：</label>
             <input type="text" id="alarmName" placeholder="例如：第一節下課">
         </div>
         <div class="input-group">
             <label>設定時間 (時:分)：</label>
-            <input type="time" id="newTime"> </div>
+            <input type="time" id="newTime">
+        </div>
+        <div class="input-group">
+            <label>響鈴長度：</label>
+            <select id="durationSelect">
+                <option value="5">5 秒</option>
+                <option value="10">10 秒</option>
+                <option value="15">15 秒</option>
+                <option value="20">20 秒</option>
+            </select>
+        </div>
         <div class="input-group">
             <label>選擇鈴聲：</label>
             <select id="soundSelect">
@@ -44,7 +54,6 @@
                 <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
                 <option value="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3">快節奏警報</option>
                 <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
-                <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
             </select>
         </div>
         <button class="btn btn-add" onclick="addAlarm()">+ 新增鬧鐘</button>
@@ -58,6 +67,7 @@
 <script>
     let alarms = JSON.parse(localStorage.getItem('classAlarms')) || [];
     let isSystemActive = false;
+    let alarmTimer = null; // 用來控制自動停止的計時器
 
     setInterval(updateClock, 1000);
     renderAlarms();
@@ -77,7 +87,7 @@
 
     function toggleSystem() {
         isSystemActive = true;
-        document.getElementById('systemBtn').innerText = "系統運行中...";
+        document.getElementById('systemBtn').innerText = "✅ 系統監控中...";
         document.getElementById('systemBtn').style.backgroundColor = "#34a853";
         // 解鎖音訊
         const audio = document.getElementById('globalPlayer');
@@ -89,8 +99,10 @@
         const time = document.getElementById('newTime').value;
         const name = document.getElementById('alarmName').value || "鬧鐘";
         const sound = document.getElementById('soundSelect').value;
+        const duration = document.getElementById('durationSelect').value;
         if (!time) return alert("請設定時間");
-        alarms.push({ time, name, sound, hasTriggered: false });
+        
+        alarms.push({ time, name, sound, duration, hasTriggered: false });
         saveAndRender();
     }
 
@@ -101,7 +113,7 @@
                 triggerAlarm(alarm);
             }
             if (currentHM !== alarm.time) {
-                alarm.hasTriggered = false; // 分鐘過後重置標記
+                alarm.hasTriggered = false; 
             }
         });
     }
@@ -116,15 +128,23 @@
         document.getElementById('stopBtn').style.display = "block";
         document.body.classList.add('active-alarm');
 
-        // 跳出提示視窗，點擊確定會關閉鬧鐘
+        // 設定自動停止計時器
+        alarmTimer = setTimeout(() => {
+            stopAlarm();
+        }, alarm.duration * 1000);
+
+        // 跳出提示視窗
         setTimeout(() => {
-            if (confirm(`⏰ 鬧鐘響了：${alarm.name}\n點擊「確定」關閉鈴聲`)) {
+            if (confirm(`⏰ 鬧鐘響了：${alarm.name}\n預計響鈴 ${alarm.duration} 秒\n點擊「確定」可立即關閉`)) {
                 stopAlarm();
             }
         }, 100);
     }
 
     function stopAlarm() {
+        // 清除自動停止計時器，避免重複執行
+        if (alarmTimer) clearTimeout(alarmTimer);
+        
         const audio = document.getElementById('globalPlayer');
         audio.pause();
         audio.currentTime = 0;
@@ -146,15 +166,4 @@
         const list = document.getElementById('alarmList');
         list.innerHTML = "";
         alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((alarm, index) => {
-            const item = document.createElement('div');
-            item.className = 'alarm-item';
-            item.innerHTML = `
-                <div><b>${alarm.time}</b> - ${alarm.name}</div>
-                <button onclick="deleteAlarm(${index})" style="background:#ff4d4d; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">刪除</button>
-            `;
-            list.appendChild(item);
-        });
-    }
-</script>
-</body>
-</html>
+            const item = document.
