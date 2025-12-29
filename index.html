@@ -2,22 +2,22 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘 - 修正版</title>
+    <title>班級鬧鐘 - 最終穩定版</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 350px; }
-        .time-display { font-size: 3rem; font-weight: bold; color: #1a73e8; margin-bottom: 20px; }
+        .time-display { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin-bottom: 20px; }
         input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        button { background-color: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; }
-        #status { font-size: 0.9rem; color: #666; margin-top: 10px; }
-        .alarm-active { background-color: #ea4335 !important; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.7; } }
+        button { background-color: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        #status { font-size: 0.9rem; color: #666; margin-top: 10px; border: 1px dashed #ccc; padding: 5px; }
+        .alarm-active { background-color: #ea4335 !important; animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>班級鬧鐘 (穩定修正版)</h2>
+    <h2>班級鬧鐘</h2>
     <div id="clock" class="time-display">00:00:00</div>
     
     <label>設定時間：</label>
@@ -30,51 +30,68 @@
         <option value="30">30 秒</option>
     </select>
     
-    <button id="startBtn" onclick="startAlarmSystem()">啟動鬧鐘系統</button>
-    <div id="status">狀態：尚未啟動 (請點擊按鈕)</div>
+    <button id="startBtn" onclick="initSystem()">點擊啟動系統</button>
+    <div id="status">狀態：等待授權</div>
+    <button style="background-color: #666; margin-top: 20px;" onclick="testSound()">測試鈴聲/語音</button>
 </div>
 
-<audio id="audioPlayer" src="https://actions.google.com/sounds/v1/alarms/alarm_clock_beep.ogg" preload="auto"></audio>
+<audio id="audioPlayer" src="alert.mp3" preload="auto"></audio>
 
 <script>
     let alarmTime = "";
     let isRunning = false;
     let hasTriggered = false;
 
-    // 自動填入現在時間
+    // 預設為現在時間
     const now = new Date();
     document.getElementById('alarmTime').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":00";
 
-    function startAlarmSystem() {
-        // 點擊瞬間播放並立即暫停，藉此取得瀏覽器音訊授權
+    function initSystem() {
+        isRunning = true;
+        alarmTime = document.getElementById('alarmTime').value;
+        document.getElementById('status').innerText = `監控中：${alarmTime} 響鈴`;
+        document.getElementById('startBtn').innerText = "系統運行中 (請勿關閉網頁)";
+        document.getElementById('startBtn').style.backgroundColor = "#34a853";
+        
+        // 嘗試解鎖音訊
         const audio = document.getElementById('audioPlayer');
-        audio.play().then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            
-            alarmTime = document.getElementById('alarmTime').value;
-            isRunning = true;
-            document.getElementById('status').innerText = `監控中：將於 ${alarmTime} 響鈴`;
-            document.getElementById('startBtn').innerText = "系統運行中...";
-            document.getElementById('startBtn').style.backgroundColor = "#34a853";
-        }).catch(err => {
-            alert("請再點擊一次按鈕以授權聲音！");
-        });
+        audio.play().then(() => { audio.pause(); audio.currentTime = 0; });
+        speak("鬧鐘系統已啟動");
+    }
+
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        window.speechSynthesis.speak(msg);
+    }
+
+    function testSound() {
+        speak("測試音訊與語音");
+        const audio = document.getElementById('audioPlayer');
+        audio.play();
+        setTimeout(() => { audio.pause(); audio.currentTime = 0; }, 2000);
     }
 
     function checkTime() {
         const now = new Date();
-        const timeStr = now.toTimeString().split(' ')[0]; // 格式 HH:mm:ss
-        document.getElementById('clock').innerText = timeStr;
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        const s = now.getSeconds().toString().padStart(2, '0');
+        const currentTime = `${h}:${m}:${s}`;
+        
+        document.getElementById('clock').innerText = currentTime;
 
         if (!isRunning) return;
 
-        // 比對時間 (HH:mm:ss)
-        if (timeStr === alarmTime && !hasTriggered) {
+        // 寬鬆比對：只要「分」對了，且該分鐘還沒響過
+        const settingHM = alarmTime.substring(0, 5);
+        const currentHM = currentTime.substring(0, 5);
+
+        if (currentHM === settingHM && !hasTriggered) {
             playAlarm();
         }
 
-        if (timeStr !== alarmTime) {
+        if (currentHM !== settingHM) {
             hasTriggered = false;
         }
     }
@@ -85,8 +102,11 @@
         const sec = document.getElementById('duration').value;
         
         document.body.classList.add('alarm-active');
+        
+        // 同時執行：播放語音標題 + 鈴聲
+        speak("鬧鐘響了，請注意時間");
         audio.loop = true;
-        audio.play();
+        audio.play().catch(e => console.log("音訊播放失敗，改用語音補償"));
 
         setTimeout(() => {
             audio.pause();
