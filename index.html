@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘 - 完整資訊版</title>
+    <title>班級鬧鐘 - 播放模式自訂版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 480px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
@@ -18,8 +18,7 @@
         .alarm-item { text-align: left; padding: 15px; border-bottom: 2px solid #e8f0fe; background: #fff; margin-top: 10px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .alarm-info { font-size: 0.9rem; color: #555; margin-top: 5px; line-height: 1.5; }
         .delete-btn { position: absolute; right: 15px; top: 15px; color: #d93025; border: 1px solid #d93025; background: white; cursor: pointer; font-weight: bold; width: auto; padding: 5px 10px; border-radius: 5px; }
-        .delete-btn:hover { background: #d93025; color: white; }
-        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; }
+        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; margin-top: 4px; }
         .flash-bg { animation: alert-flash 0.4s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff3333; color: white; } }
     </style>
@@ -27,19 +26,37 @@
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘 - 完整資訊版</h2>
+    <h2>班級鬧鐘 - 播放模式自訂版</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
     <button id="authBtn" class="btn-main" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
     <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
 
     <div class="setup-group">
-        <label>1. 鬧鐘標題 (播放語音)：</label>
+        <label>1. 鬧鐘標題 (語音內容)：</label>
         <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
         
-        <label>2. 設定時間與響鈴秒數：</label>
+        <label>2. 設定時間與播放方式：</label>
         <div style="display:flex; gap:10px;">
-            <input type="time" id="alarmTime" style="flex:2">
+            <input type="time" id="alarmTime" style="flex:1.5">
+            <select id="playMode" style="flex:2">
+                <option value="seq">先語音 ➔ 後鈴聲</option>
+                <option value="sim">語音與鈴聲同時播放</option>
+            </select>
+        </div>
+
+        <label>3. 重複週期與長度：</label>
+        <div style="display:flex; gap:10px;">
+            <select id="repeatSelect" style="flex:2">
+                <option value="once">僅一次</option>
+                <option value="daily">每天</option>
+                <option value="weekday">平日 (週一至五)</option>
+                <option value="weekend">週末 (週六、日)</option>
+                <option value="mon">每週一</option><option value="tue">每週二</option>
+                <option value="wed">每週三</option><option value="thu">每週四</option>
+                <option value="fri">每週五</option><option value="sat">每週六</option>
+                <option value="sun">每週日</option>
+            </select>
             <select id="alarmDuration" style="flex:1">
                 <option value="5">5秒</option>
                 <option value="10">10秒</option>
@@ -48,22 +65,7 @@
             </select>
         </div>
 
-        <label>3. 重複週期：</label>
-        <select id="repeatSelect">
-            <option value="once">僅一次</option>
-            <option value="daily">每天</option>
-            <option value="weekday">平日 (週一至週五)</option>
-            <option value="weekend">週末 (週六、週日)</option>
-            <option value="mon">每週一</option>
-            <option value="tue">每週二</option>
-            <option value="wed">每週三</option>
-            <option value="thu">每週四</option>
-            <option value="fri">每週五</option>
-            <option value="sat">每週六</option>
-            <option value="sun">每週日</option>
-        </select>
-
-        <label>4. 選擇鈴聲與試聽：</label>
+        <label>4. 選擇鈴聲：</label>
         <div class="sound-row">
             <select id="soundSelect" style="flex:2.5; height:42px;">
                 <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
@@ -132,10 +134,10 @@
 
     function startMonitoring() {
         isMonitoring = true;
-        document.getElementById('authBtn').innerText = "✅ 監控運行中";
+        document.getElementById('authBtn').innerText = "✅ 監控中";
         document.getElementById('authBtn').style.background = "#34a853";
         updateUI();
-        speak("系統已啟動");
+        speak("系統啟動");
     }
 
     function previewSound() {
@@ -165,12 +167,13 @@
         const s = document.getElementById('soundSelect').value;
         const sn = document.getElementById('soundSelect').options[document.getElementById('soundSelect').selectedIndex].text;
         const r = document.getElementById('repeatSelect').value;
+        const pm = document.getElementById('playMode').value;
 
         if (!t) return alert("請設定時間");
 
         alarms.push({ 
             time: t, name: n, duration: d, sound: s, soundName: sn,
-            repeat: r, triggeredToday: false 
+            repeat: r, playMode: pm, triggeredToday: false 
         });
         saveData();
     }
@@ -180,15 +183,17 @@
         document.body.classList.add('flash-bg');
         document.getElementById('stopBtn').style.display = "block";
 
+        const bp = document.getElementById('bellPlayer');
+        bp.src = alarm.sound;
+        bp.loop = true;
+
         let count = 0;
         const repeatSpeak = () => {
             if (count < 3) {
                 count++;
                 speak(alarm.name, repeatSpeak);
-            } else {
-                const bp = document.getElementById('bellPlayer');
-                bp.src = alarm.sound;
-                bp.loop = true;
+            } else if (alarm.playMode === 'seq') {
+                // 「先語音後鈴聲」模式：語音唸完才啟動鈴聲計時
                 bp.play();
                 autoStopTimer = setTimeout(() => {
                     killAlarm();
@@ -196,7 +201,19 @@
                 }, alarm.duration * 1000);
             }
         };
-        repeatSpeak();
+
+        if (alarm.playMode === 'sim') {
+            // 「同時」模式：鈴聲先響，語音同步唸
+            bp.play();
+            repeatSpeak();
+            autoStopTimer = setTimeout(() => {
+                killAlarm();
+                if (alarm.repeat === 'once') deleteAlarm(index);
+            }, alarm.duration * 1000);
+        } else {
+            // 「順序」模式：先啟動語音迴圈
+            repeatSpeak();
+        }
     }
 
     function killAlarm() {
@@ -226,6 +243,7 @@
             once: "僅一次", daily: "每天", weekday: "平日", weekend: "週末",
             mon: "每週一", tue: "每週二", wed: "每週三", thu: "每週四", fri: "每週五", sat: "每週六", sun: "每週日"
         };
+        const modeNames = { seq: "先語音後鈴聲", sim: "語音鈴聲同步" };
 
         alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
             const div = document.createElement('div');
@@ -235,6 +253,7 @@
                 <div class="alarm-info">
                     <b>標題：</b>${a.name}<br>
                     <span class="tag">🔁 ${repeatNames[a.repeat]}</span>
+                    <span class="tag">📻 ${modeNames[a.playMode]}</span>
                     <span class="tag">🎵 ${a.soundName}</span>
                     <span class="tag">⏳ ${a.duration}秒</span>
                 </div>
