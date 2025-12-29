@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級全功能鬧鐘 - 智慧重複版</title>
+    <title>班級鬧鐘 - 完整資訊版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 480px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
@@ -15,18 +15,19 @@
         .btn-stop { background: #d93025; color: white; border: none; font-weight: bold; display: none; padding: 20px; font-size: 1.5rem; margin-top: 15px; border-radius: 10px; }
         .sound-row { display: flex; gap: 8px; align-items: flex-end; }
         .btn-listen { flex: 1; background: #6c757d; color: white; border: none; cursor: pointer; height: 42px; border-radius: 8px; }
-        .alarm-item { text-align: left; padding: 12px; border-bottom: 1px solid #eee; background: #fff; margin-top: 8px; border-radius: 10px; position: relative; }
-        .alarm-info { font-size: 0.9rem; color: #555; }
-        .delete-btn { position: absolute; right: 10px; top: 10px; color: red; border: none; background: none; cursor: pointer; font-weight: bold; width: auto; }
+        .alarm-item { text-align: left; padding: 15px; border-bottom: 2px solid #e8f0fe; background: #fff; margin-top: 10px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .alarm-info { font-size: 0.9rem; color: #555; margin-top: 5px; line-height: 1.5; }
+        .delete-btn { position: absolute; right: 15px; top: 15px; color: #d93025; border: 1px solid #d93025; background: white; cursor: pointer; font-weight: bold; width: auto; padding: 5px 10px; border-radius: 5px; }
+        .delete-btn:hover { background: #d93025; color: white; }
+        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; }
         .flash-bg { animation: alert-flash 0.4s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff3333; color: white; } }
-        #customDateGroup { display: none; }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘 - 智慧重複版</h2>
+    <h2>班級鬧鐘 - 完整資訊版</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
     <button id="authBtn" class="btn-main" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
@@ -48,7 +49,7 @@
         </div>
 
         <label>3. 重複週期：</label>
-        <select id="repeatSelect" onchange="toggleDateInput()">
+        <select id="repeatSelect">
             <option value="once">僅一次</option>
             <option value="daily">每天</option>
             <option value="weekday">平日 (週一至週五)</option>
@@ -60,13 +61,7 @@
             <option value="fri">每週五</option>
             <option value="sat">每週六</option>
             <option value="sun">每週日</option>
-            <option value="custom">自訂月日 (例如 12/30)</option>
         </select>
-
-        <div id="customDateGroup">
-            <label>選擇自訂日期：</label>
-            <input type="date" id="customDate">
-        </div>
 
         <label>4. 選擇鈴聲與試聽：</label>
         <div class="sound-row">
@@ -77,7 +72,7 @@
                 <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
                 <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
             </select>
-            <button class="btn-listen" onclick="previewSound()">試聽</button>
+            <button class="btn-listen" onclick="previewSound()">🔊 試聽</button>
         </div>
 
         <button class="btn-add" onclick="addNewAlarm()">+ 新增此鬧鐘</button>
@@ -110,10 +105,7 @@
     }, 1000);
 
     function shouldAlarmRing(alarm, now) {
-        const day = now.getDay(); // 0(日) 到 6(六)
-        const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-        const monthDay = dateStr.substring(5, 10); // MM-DD
-
+        const day = now.getDay(); 
         switch (alarm.repeat) {
             case 'once': return true;
             case 'daily': return true;
@@ -126,14 +118,8 @@
             case 'fri': return day === 5;
             case 'sat': return day === 6;
             case 'sun': return day === 0;
-            case 'custom': return alarm.customDate === dateStr;
             default: return false;
         }
-    }
-
-    function toggleDateInput() {
-        const val = document.getElementById('repeatSelect').value;
-        document.getElementById('customDateGroup').style.display = (val === 'custom') ? 'block' : 'none';
     }
 
     function unlockAudio() {
@@ -149,7 +135,7 @@
         document.getElementById('authBtn').innerText = "✅ 監控運行中";
         document.getElementById('authBtn').style.background = "#34a853";
         updateUI();
-        speak("系統啟動");
+        speak("系統已啟動");
     }
 
     function previewSound() {
@@ -177,15 +163,14 @@
         const n = document.getElementById('alarmName').value || "時間到了";
         const d = document.getElementById('alarmDuration').value;
         const s = document.getElementById('soundSelect').value;
+        const sn = document.getElementById('soundSelect').options[document.getElementById('soundSelect').selectedIndex].text;
         const r = document.getElementById('repeatSelect').value;
-        const cd = document.getElementById('customDate').value;
 
         if (!t) return alert("請設定時間");
-        if (r === 'custom' && !cd) return alert("請選擇日期");
 
         alarms.push({ 
-            time: t, name: n, duration: d, sound: s, 
-            repeat: r, customDate: cd, triggeredToday: false 
+            time: t, name: n, duration: d, sound: s, soundName: sn,
+            repeat: r, triggeredToday: false 
         });
         saveData();
     }
@@ -239,18 +224,20 @@
         container.innerHTML = "";
         const repeatNames = {
             once: "僅一次", daily: "每天", weekday: "平日", weekend: "週末",
-            mon: "每週一", tue: "每週二", wed: "每週三", thu: "每週四", fri: "每週五", sat: "每週六", sun: "每週日", custom: "自訂日期"
+            mon: "每週一", tue: "每週二", wed: "每週三", thu: "每週四", fri: "每週五", sat: "每週六", sun: "每週日"
         };
 
         alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
             const div = document.createElement('div');
             div.className = 'alarm-item';
-            let repeatText = repeatNames[a.repeat];
-            if (a.repeat === 'custom') repeatText += ` (${a.customDate})`;
-
             div.innerHTML = `
-                <div><b>${a.time}</b> [${repeatText}]</div>
-                <div class="alarm-info">${a.name}</div>
+                <div><span style="font-size:1.4rem; color:#1a73e8;"><b>${a.time}</b></span></div>
+                <div class="alarm-info">
+                    <b>標題：</b>${a.name}<br>
+                    <span class="tag">🔁 ${repeatNames[a.repeat]}</span>
+                    <span class="tag">🎵 ${a.soundName}</span>
+                    <span class="tag">⏳ ${a.duration}秒</span>
+                </div>
                 <button class="delete-btn" onclick="deleteAlarm(${i})">刪除</button>
             `;
             container.appendChild(div);
