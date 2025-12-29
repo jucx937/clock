@@ -12,7 +12,7 @@
         .clock { font-size: 4rem; font-weight: bold; color: #1a73e8; line-height: 1.1; }
         .date-display { font-size: 1.5rem; color: #555; font-weight: bold; margin-top: 5px; border-top: 1px solid #c4d7f5; padding-top: 5px; }
         
-        /* 按鈕控制區：停止按鈕在啟動按鈕左邊 */
+        /* 按鈕控制區 */
         .control-panel { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; min-height: 70px; }
         
         @keyframes pulse-red {
@@ -66,21 +66,17 @@
 
     <div class="setup-area">
         <div class="setup-row">
-            <div class="input-item" style="width: 150px;">
-                <label>鬧鐘標題</label>
-                <input type="text" id="alarmName" placeholder="例如：打掃">
+            <div class="input-item" style="width: 200px;"> <label>鬧鐘標題</label>
+                <input type="text" id="alarmName" placeholder="例如：打掃時間">
             </div>
-            <div class="input-item" style="flex: 2;">
-                <label>時間與播放方式</label>
+            <div class="input-item" style="flex: 1.5;"> <label>時間與播放方式</label>
                 <div style="display: flex; gap: 5px;">
-                    <input type="time" id="alarmTime" style="width: 130px;">
-                    <select id="playMode" style="flex: 1;">
-                        <option value="seq">先語音 ➔ 後鈴聲</option>
-                        <option value="sim">語音與鈴聲同時</option>
+                    <input type="time" id="alarmTime" style="width: 160px;"> <select id="playMode" style="flex: 1;"> <option value="seq">先語音➔鈴聲</option>
+                        <option value="sim">語音/鈴聲同步</option>
                     </select>
                 </div>
             </div>
-            <div class="input-item" style="width: 130px;">
+            <div class="input-item" style="width: 120px;">
                 <label>重複週期</label>
                 <select id="repeatSelect">
                     <option value="once">一次</option><option value="daily">每天</option>
@@ -103,8 +99,8 @@
                     <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
                 </select>
             </div>
-            <div class="input-item" style="width: 160px;">
-                <label>鈴聲持續時間</label>
+            <div class="input-item" style="width: 140px;">
+                <label>持續時間</label>
                 <select id="alarmDuration">
                     <option value="5">播放 5 秒</option>
                     <option value="10">播放 10 秒</option>
@@ -123,6 +119,7 @@
 <audio id="bellPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
+    /* 此部分邏輯與穩定版完全一致 */
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
@@ -133,7 +130,6 @@
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
         if(document.getElementById('liveClock')) document.getElementById('liveClock').innerText = timeStr;
-        
         const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
         const dateStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${days[now.getDay()]}`;
         if(document.getElementById('liveDate')) document.getElementById('liveDate').innerText = dateStr;
