@@ -2,9 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘系統 - 暖心版</title>
+    <title>班級鬧鐘系統</title>
     <style>
-        /* 整體背景：輕盈杏仁暖白 */
+        /* 保持暖色系：背景採用輕盈杏仁暖白 */
         body { 
             font-family: 'Microsoft JhengHei', sans-serif; 
             background-color: #FFF9F5; 
@@ -12,153 +12,131 @@
             justify-content: center; 
             padding: 20px; 
             margin: 0; 
-            color: #5D4037; /* 深咖啡色文字，比純黑柔和 */
+            color: #5D4037; 
         }
-        
-        /* 容器：柔和米色 */
+        /* 還原原版容器尺寸與陰影 */
         .container { 
-            background: #FFFFFF; 
+            background: white; 
             width: 950px; 
             max-width: 98vw; 
             padding: 30px; 
-            border-radius: 30px; 
-            box-shadow: 0 10px 40px rgba(160, 82, 45, 0.08); 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(160, 82, 45, 0.1); 
             text-align: center; 
-            border: 1px solid #F3E5F5; 
         }
         
-        /* 時鐘區域：夕陽橙漸層感 */
+        /* 時鐘區域：暖陽橙色調 */
         .clock-container { 
             background: #FFF3E0; 
-            border-radius: 25px; 
-            padding: 20px; 
+            border-radius: 15px; 
+            padding: 15px; 
             display: inline-block; 
-            min-width: 400px; 
-            margin-bottom: 25px; 
-            border: 2px solid #FFE0B2; 
+            min-width: 380px; 
+            margin-bottom: 20px; 
         }
         .clock { 
-            font-size: 4.5rem; 
-            font-weight: 800; 
-            color: #D97706; /* 暖陽橙 */
+            font-size: 4rem; 
+            font-weight: bold; 
+            color: #D97706; 
             line-height: 1.1; 
-            letter-spacing: 2px; 
         }
         .date-display { 
-            font-size: 1.6rem; 
+            font-size: 1.5rem; 
             color: #8D6E63; 
             font-weight: bold; 
-            margin-top: 10px; 
-            border-top: 2px solid #FFE0B2; 
-            padding-top: 8px; 
+            margin-top: 5px; 
+            border-top: 1px solid #FFE0B2; 
+            padding-top: 5px; 
         }
         
-        /* 按鈕：啟動與運行中統一為 焦糖楓葉色 */
-        .control-panel { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; min-height: 70px; }
+        /* 啟動監控按鈕：焦糖楓葉色 */
+        .control-panel { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; min-height: 70px; }
         .btn-main { 
             background: #A0522D; 
-            color: #FFFFFF; 
+            color: white; 
             border: none; 
             font-weight: bold; 
             cursor: pointer; 
             height: 60px; 
-            font-size: 1.3rem; 
+            font-size: 1.2rem; 
             width: 320px; 
-            border-radius: 18px; 
-            transition: 0.3s; 
-            box-shadow: 0 4px 15px rgba(160, 82, 45, 0.3); 
+            border-radius: 15px; 
+            transition: 0.3s;
         }
-        .btn-main:hover { background: #8B4513; transform: translateY(-2px); }
+        .btn-main:hover { background: #8B4513; }
 
-        /* 停止響鈴：溫暖的珊瑚紅 */
-        @keyframes pulse-warm-red {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.6); }
-            50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(229, 62, 62, 0); }
+        /* 停止響鈴：珊瑚紅 */
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
         }
         .btn-stop { 
-            background: #E53E3E; 
-            color: white; 
-            border: none; 
-            font-weight: bold; 
-            display: none; 
-            padding: 0 35px; 
-            font-size: 1.6rem; 
-            height: 65px; 
-            border-radius: 20px; 
-            cursor: pointer; 
-            animation: pulse-warm-red 1.5s infinite; 
+            background: #E53E3E; color: white; border: none; font-weight: bold; 
+            display: none; padding: 0 35px; font-size: 1.5rem; height: 60px;
+            border-radius: 15px; cursor: pointer; animation: pulse-red 1.5s infinite;
         }
 
-        /* 設定區域：淡淡的蜂蜜黃背景 */
+        /* 還原原版設定區域排版 */
         .setup-area { 
             background: #FFFBF0; 
-            padding: 25px; 
-            border-radius: 22px; 
-            border: 1.5px solid #FEF3C7; 
-            margin-bottom: 35px; 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid #FEF3C7; 
+            margin-bottom: 30px; 
             text-align: left; 
         }
         .setup-row { display: flex; gap: 12px; margin-bottom: 15px; align-items: flex-end; }
+        .setup-row:last-child { margin-bottom: 0; }
         
-        .input-item label { font-size: 0.95rem; color: #795548; font-weight: 800; margin-bottom: 6px; }
-        input, select, button { 
-            padding: 10px; 
-            border-radius: 12px; 
-            border: 1.5px solid #E9D5FF; /* 淡淡的紫藕色邊框 */
-            font-size: 1rem; 
-            height: 50px; 
-            color: #5D4037; 
-            background: #FFFFFF;
-        }
-        input:focus { border-color: #D97706; outline: none; }
+        .input-item { display: flex; flex-direction: column; }
+        .input-item label { font-size: 0.85rem; color: #795548; font-weight: bold; margin-bottom: 5px; }
         
-        /* 功能按鈕：橄欖綠 */
-        .btn-add { background: #6B8E23; color: white; border: none; font-weight: bold; cursor: pointer; padding: 0 30px; transition: 0.3s; }
+        input, select, button { padding: 10px; border-radius: 10px; border: 1px solid #E9D5FF; font-size: 0.95rem; height: 48px; box-sizing: border-box; background: white; color: #5D4037; }
+        
+        /* 新增按鈕：橄欖綠 */
+        .btn-add { background: #6B8E23; color: white; border: none; font-weight: bold; cursor: pointer; padding: 0 25px; }
         .btn-add:hover { background: #556B2F; }
+        
+        /* 試聽按鈕 */
         .btn-listen { background: #DBCBB0; color: #5D4037; border: none; cursor: pointer; padding: 0 15px; font-size: 0.9rem; }
 
-        /* 鬧鐘卡片：與設定區一致的暖黃色調 */
-        #alarmListArea { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 25px; }
+        /* 還原原版鬧鐘清單排版 */
+        #alarmListArea { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
         .alarm-item { 
             text-align: left; 
-            padding: 25px; 
+            padding: 20px; 
             background: #FFFBF0; 
             border: 2px solid #FEF3C7; 
-            border-radius: 25px; 
+            border-radius: 20px; 
             position: relative; 
-            box-shadow: 0 4px 15px rgba(160, 82, 45, 0.05); 
-            transition: 0.3s; 
+            box-shadow: 0 4px 10px rgba(160, 82, 45, 0.05); 
         }
-        .alarm-item:hover { border-color: #D97706; transform: translateY(-5px); background: #FFF9E6; }
-        
-        .alarm-title { font-size: 1.9rem; font-weight: 900; color: #5D4037; margin-bottom: 6px; display: block; line-height: 1.2; }
+        .alarm-title { font-size: 1.8rem; font-weight: 800; color: #5D4037; margin-bottom: 5px; display: block; line-height: 1.2; }
         
         /* 鬧鐘時間：肉桂棕 */
-        .alarm-time { font-size: 1.8rem; font-weight: bold; color: #8B4513; margin-bottom: 12px; display: block; } 
+        .alarm-time { font-size: 1.6rem; font-weight: bold; color: #8B4513; margin-bottom: 10px; display: block; }
         
         /* 標籤：白底橘字 */
         .tag { 
             display: inline-block; 
             background: #FFFFFF; 
             color: #A0522D; 
-            padding: 5px 12px; 
-            border-radius: 10px; 
+            padding: 4px 10px; 
+            border-radius: 8px; 
             font-size: 0.85rem; 
-            margin-right: 6px; 
-            margin-top: 8px; 
+            margin-right: 5px; 
+            margin-top: 5px; 
             border: 1px solid #FEF3C7; 
-            font-weight: bold; 
         }
-        .alarm-item.done { opacity: 0.6; background: #F5F5F5; border-color: #E0E0E0; }
-        .delete-btn { position: absolute; right: 15px; top: 15px; color: #D7CCC8; border: none; background: none; cursor: pointer; font-size: 1.6rem; transition: 0.2s; }
-        .delete-btn:hover { color: #E53E3E; }
+        .alarm-item.done { background: #F5F5F5; opacity: 0.7; border-color: #E0E0E0; }
+        .delete-btn { position: absolute; right: 12px; top: 12px; color: #D7CCC8; border: none; background: none; cursor: pointer; font-size: 1.5rem; }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h1 style="color: #A0522D; font-weight: 900; margin-bottom: 25px; letter-spacing: 1px;">🎨 班級鬧鐘系統</h1>
+    <h2 style="color: #A0522D; margin-top: 0;">班級鬧鐘系統</h2>
     
     <div class="clock-container">
         <div id="liveClock" class="clock">00:00:00</div>
@@ -172,10 +150,10 @@
 
     <div class="setup-area">
         <div class="setup-row">
-            <div class="input-item" style="width: 200px;"> <label>📌 鬧鐘標題</label>
+            <div class="input-item" style="width: 200px;"> <label>鬧鐘標題</label>
                 <input type="text" id="alarmName" placeholder="例如：打掃時間">
             </div>
-            <div class="input-item" style="flex: 1.5;"> <label>⏰ 時間與播放方式</label>
+            <div class="input-item" style="flex: 1.5;"> <label>時間與播放方式</label>
                 <div style="display: flex; gap: 5px;">
                     <input type="time" id="alarmTime" style="width: 160px;"> 
                     <select id="playMode" style="flex: 1;"> 
@@ -185,7 +163,7 @@
                 </div>
             </div>
             <div class="input-item" style="width: 120px;">
-                <label>🔄 重複週期</label>
+                <label>重複週期</label>
                 <select id="repeatSelect">
                     <option value="once">一次</option><option value="daily">每天</option>
                     <option value="weekday">平日</option><option value="weekend">週末</option>
@@ -198,7 +176,7 @@
 
         <div class="setup-row">
             <div class="input-item" style="width: 180px;">
-                <label>🎵 選擇鈴聲</label>
+                <label>選擇鈴聲</label>
                 <select id="soundSelect">
                     <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
                     <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
@@ -208,7 +186,7 @@
                 </select>
             </div>
             <div class="input-item" style="width: 140px;">
-                <label>⌛ 持續時間</label>
+                <label>持續時間</label>
                 <select id="alarmDuration">
                     <option value="5">播放 5 秒</option>
                     <option value="10">播放 10 秒</option>
@@ -217,7 +195,7 @@
                 </select>
             </div>
             <button class="btn-listen" onclick="previewSound()">🔊 試聽</button>
-            <button class="btn-add" style="flex: 1;" onclick="addNewAlarm()">✨ 新增鬧鐘</button>
+            <button class="btn-add" style="flex: 1;" onclick="addNewAlarm()">+ 新增鬧鐘</button>
         </div>
     </div>
 
@@ -227,7 +205,7 @@
 <audio id="bellPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
-    /* 核心邏輯保持不變 */
+    /* 邏輯部分與穩定版 完全一致 */
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
@@ -286,7 +264,7 @@
         isMonitoring = true;
         const btn = document.getElementById('authBtn');
         btn.innerText = "✅ 監控運行中";
-        btn.style.background = "#A0522D"; 
+        btn.style.background = "#A0522D";
         updateUI();
         speak("系統啟動");
     }
