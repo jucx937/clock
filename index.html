@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘系統</title>
+    <title>線上鬧鐘系統</title>
     <style>
         /* 保持暖色系：背景採用輕盈杏仁暖白 */
         body { 
@@ -14,7 +14,7 @@
             margin: 0; 
             color: #5D4037; 
         }
-        /* 還原原版容器尺寸與陰影 */
+        /* 容器尺寸與陰影 */
         .container { 
             background: white; 
             width: 950px; 
@@ -49,8 +49,10 @@
             padding-top: 5px; 
         }
         
-        /* 啟動監控按鈕：焦糖楓葉色 */
+        /* 啟動監控按鈕控制區 */
         .control-panel { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; min-height: 70px; }
+        
+        /* 初始狀態按鈕：焦糖楓葉色 */
         .btn-main { 
             background: #A0522D; 
             color: white; 
@@ -65,6 +67,14 @@
         }
         .btn-main:hover { background: #8B4513; }
 
+        /* 監控運行中狀態：深海藍 (藍色系) */
+        .btn-main.running {
+            background: #1976D2;
+        }
+        .btn-main.running:hover {
+            background: #1565C0;
+        }
+
         /* 停止響鈴：珊瑚紅 */
         @keyframes pulse-red {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
@@ -77,7 +87,7 @@
             border-radius: 15px; cursor: pointer; animation: pulse-red 1.5s infinite;
         }
 
-        /* 還原原版設定區域排版 */
+        /* 設定區域排版 */
         .setup-area { 
             background: #FFFBF0; 
             padding: 20px; 
@@ -101,7 +111,7 @@
         /* 試聽按鈕 */
         .btn-listen { background: #DBCBB0; color: #5D4037; border: none; cursor: pointer; padding: 0 15px; font-size: 0.9rem; }
 
-        /* 還原原版鬧鐘清單排版 */
+        /* 鬧鐘清單排版 */
         #alarmListArea { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
         .alarm-item { 
             text-align: left; 
@@ -136,7 +146,7 @@
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2 style="color: #A0522D; margin-top: 0;">班級鬧鐘系統</h2>
+    <h2 style="color: #A0522D; margin-top: 0;">線上鬧鐘系統</h2>
     
     <div class="clock-container">
         <div id="liveClock" class="clock">00:00:00</div>
@@ -205,7 +215,6 @@
 <audio id="bellPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
-    /* 邏輯部分與穩定版 完全一致 */
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
@@ -264,7 +273,7 @@
         isMonitoring = true;
         const btn = document.getElementById('authBtn');
         btn.innerText = "✅ 監控運行中";
-        btn.style.background = "#A0522D";
+        btn.classList.add('running');
         updateUI();
         speak("系統啟動");
     }
