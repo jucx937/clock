@@ -2,38 +2,72 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘 - 播放模式自訂版</title>
+    <title>班級鬧鐘 - 格狀排版版</title>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; width: 480px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
-        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 15px 0; background: #e8f0fe; border-radius: 15px; padding: 10px; line-height: 1.2; }
-        .setup-group { background: #fafafa; padding: 15px; border-radius: 15px; border: 1px solid #eee; text-align: left; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { background: white; width: 1000px; max-width: 95vw; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
+        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin-bottom: 20px; background: #e8f0fe; border-radius: 15px; padding: 15px; display: inline-block; min-width: 300px; }
+        
+        /* 設定區域排版 */
+        .setup-group { background: #fafafa; padding: 20px; border-radius: 15px; border: 1px solid #eee; text-align: left; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
         label { display: block; font-size: 0.85rem; color: #666; margin-top: 10px; font-weight: bold; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
-        .btn-main { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin-top: 10px; }
+        .btn-main { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; }
         .btn-add { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .btn-stop { background: #d93025; color: white; border: none; font-weight: bold; display: none; padding: 20px; font-size: 1.5rem; margin-top: 15px; border-radius: 10px; }
         .sound-row { display: flex; gap: 8px; align-items: flex-end; }
         .btn-listen { flex: 1; background: #6c757d; color: white; border: none; cursor: pointer; height: 42px; border-radius: 8px; }
-        .alarm-item { text-align: left; padding: 15px; border-bottom: 2px solid #e8f0fe; background: #fff; margin-top: 10px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .alarm-info { font-size: 0.9rem; color: #555; margin-top: 5px; line-height: 1.5; }
-        .delete-btn { position: absolute; right: 15px; top: 15px; color: #d93025; border: 1px solid #d93025; background: white; cursor: pointer; font-weight: bold; width: auto; padding: 5px 10px; border-radius: 5px; }
-        .tag { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; margin-top: 4px; }
+
+        /* 鬧鐘格子清單 */
+        #alarmListArea { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); /* 核心：一排三個 */
+            gap: 20px; 
+            margin-top: 20px; 
+        }
+
+        .alarm-item { 
+            text-align: left; 
+            padding: 20px; 
+            background: #fff; 
+            border: 1px solid #e8f0fe;
+            border-radius: 15px; 
+            position: relative; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .alarm-item:hover { transform: translateY(-3px); }
+
+        .alarm-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 5px; word-break: break-all; }
+        .alarm-time { font-size: 1.8rem; font-weight: bold; color: #1a73e8; margin-bottom: 10px; }
+        
+        .alarm-info { font-size: 0.85rem; color: #666; line-height: 1.6; }
+        .tag { display: inline-block; background: #f0f4f8; color: #555; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; margin-top: 5px; border: 1px solid #ddd; }
+        
+        .delete-btn { position: absolute; right: 15px; top: 15px; color: #bbb; border: none; background: none; cursor: pointer; font-size: 1.2rem; padding: 5px; width: auto; }
+        .delete-btn:hover { color: #d93025; }
+
         .flash-bg { animation: alert-flash 0.4s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff3333; color: white; } }
+
+        /* 手機版自動調整為 1-2 個 */
+        @media (max-width: 800px) { #alarmListArea { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { #alarmListArea { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘 - 播放模式自訂版</h2>
+    <h2>班級鬧鐘系統</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
-    <button id="authBtn" class="btn-main" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
-    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
+    <div style="margin-bottom: 20px;">
+        <button id="authBtn" class="btn-main" style="width: 300px;" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
+        <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
+    </div>
 
     <div class="setup-group">
-        <label>1. 鬧鐘標題 (語音內容)：</label>
+        <label>1. 鬧鐘標題 (顯示在大字位置)：</label>
         <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
         
         <label>2. 設定時間與播放方式：</label>
@@ -193,7 +227,6 @@
                 count++;
                 speak(alarm.name, repeatSpeak);
             } else if (alarm.playMode === 'seq') {
-                // 「先語音後鈴聲」模式：語音唸完才啟動鈴聲計時
                 bp.play();
                 autoStopTimer = setTimeout(() => {
                     killAlarm();
@@ -203,7 +236,6 @@
         };
 
         if (alarm.playMode === 'sim') {
-            // 「同時」模式：鈴聲先響，語音同步唸
             bp.play();
             repeatSpeak();
             autoStopTimer = setTimeout(() => {
@@ -211,7 +243,6 @@
                 if (alarm.repeat === 'once') deleteAlarm(index);
             }, alarm.duration * 1000);
         } else {
-            // 「順序」模式：先啟動語音迴圈
             repeatSpeak();
         }
     }
@@ -249,15 +280,15 @@
             const div = document.createElement('div');
             div.className = 'alarm-item';
             div.innerHTML = `
-                <div><span style="font-size:1.4rem; color:#1a73e8;"><b>${a.time}</b></span></div>
+                <button class="delete-btn" onclick="deleteAlarm(${i})">✖</button>
+                <div class="alarm-title">${a.name}</div>
+                <div class="alarm-time">${a.time}</div>
                 <div class="alarm-info">
-                    <b>標題：</b>${a.name}<br>
                     <span class="tag">🔁 ${repeatNames[a.repeat]}</span>
-                    <span class="tag">📻 ${modeNames[a.playMode]}</span>
+                    <span class="tag">📻 ${modeNames[a.playMode]}</span><br>
                     <span class="tag">🎵 ${a.soundName}</span>
                     <span class="tag">⏳ ${a.duration}秒</span>
                 </div>
-                <button class="delete-btn" onclick="deleteAlarm(${i})">刪除</button>
             `;
             container.appendChild(div);
         });
