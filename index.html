@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <title>班級鬧鐘系統</title>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .container { background: white; width: 950px; max-width: 98vw; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
+        /* 背景改為暖灰色，減少刺眼感 */
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f2f4f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
         
-        /* 時鐘區域 */
-        .clock-container { background: #e8f0fe; border-radius: 15px; padding: 15px; display: inline-block; min-width: 380px; margin-bottom: 20px; }
-        .clock { font-size: 4rem; font-weight: bold; color: #1a73e8; line-height: 1.1; }
-        .date-display { font-size: 1.5rem; color: #555; font-weight: bold; margin-top: 5px; border-top: 1px solid #c4d7f5; padding-top: 5px; }
+        /* 容器寬度維持 950px 不變 */
+        .container { background: white; width: 950px; max-width: 98vw; padding: 30px; border-radius: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); text-align: center; border: 1px solid #e0e4e8; }
+        
+        /* 時鐘區域：改為莫蘭迪色系 */
+        .clock-container { background: #e3e9f3; border-radius: 15px; padding: 15px; display: inline-block; min-width: 380px; margin-bottom: 20px; border: 1px solid #d1d9e6; }
+        .clock { font-size: 4rem; font-weight: bold; color: #4a76a8; line-height: 1.1; }
+        .date-display { font-size: 1.5rem; color: #666; font-weight: bold; margin-top: 5px; border-top: 1px solid #c4d7f5; padding-top: 5px; }
         
         /* 按鈕控制區 */
         .control-panel { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; min-height: 70px; }
         
+        /* 停止響鈴動畫：完全保留 */
         @keyframes pulse-red {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.7); }
             50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(217, 48, 37, 0); }
@@ -25,34 +29,42 @@
             display: none; padding: 0 35px; font-size: 1.5rem; height: 60px;
             border-radius: 15px; cursor: pointer; animation: pulse-red 1.5s infinite;
         }
-        .btn-main { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 1.2rem; width: 320px; border-radius: 15px; }
+        .btn-main { background: #5a7da3; color: white; border: none; font-weight: bold; cursor: pointer; height: 60px; font-size: 1.2rem; width: 320px; border-radius: 15px; transition: 0.3s; }
+        .btn-main:hover { background: #4a6a8a; }
 
-        /* 設定區域 */
-        .setup-area { background: #fafafa; padding: 20px; border-radius: 15px; border: 1px solid #eee; margin-bottom: 30px; text-align: left; }
+        /* 設定區域：改為淺奶油色，區隔白色背景 */
+        .setup-area { background: #fdfaf2; padding: 20px; border-radius: 15px; border: 1px solid #efe5d1; margin-bottom: 30px; text-align: left; }
         .setup-row { display: flex; gap: 12px; margin-bottom: 15px; align-items: flex-end; }
         .setup-row:last-child { margin-bottom: 0; }
         
         .input-item { display: flex; flex-direction: column; }
-        .input-item label { font-size: 0.85rem; color: #666; font-weight: bold; margin-bottom: 5px; }
+        .input-item label { font-size: 0.85rem; color: #8a7e6a; font-weight: bold; margin-bottom: 5px; }
         
         input, select, button { padding: 10px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.95rem; height: 48px; box-sizing: border-box; }
-        .btn-add { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; padding: 0 25px; }
-        .btn-listen { background: #6c757d; color: white; border: none; cursor: pointer; padding: 0 15px; font-size: 0.9rem; }
+        input:focus, select:focus { border-color: #5a7da3; outline: none; }
+        
+        .btn-add { background: #68a37d; color: white; border: none; font-weight: bold; cursor: pointer; padding: 0 25px; transition: 0.3s; }
+        .btn-add:hover { background: #568a68; }
+        .btn-listen { background: #9fa8ab; color: white; border: none; cursor: pointer; padding: 0 15px; font-size: 0.9rem; }
 
         /* 鬧鐘清單 */
         #alarmListArea { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .alarm-item { text-align: left; padding: 20px; background: #fff; border: 2px solid #e8f0fe; border-radius: 20px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .alarm-title { font-size: 1.8rem; font-weight: 800; color: #222; margin-bottom: 5px; display: block; line-height: 1.2; }
-        .alarm-time { font-size: 1.6rem; font-weight: bold; color: #1a73e8; margin-bottom: 10px; display: block; }
-        .tag { display: inline-block; background: #f0f4f8; color: #444; padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; margin-right: 5px; margin-top: 5px; border: 1px solid #ccd; }
-        .alarm-item.done { background: #f8f8f8; opacity: 0.7; border-color: #ddd; }
-        .delete-btn { position: absolute; right: 12px; top: 12px; color: #ccc; border: none; background: none; cursor: pointer; font-size: 1.5rem; }
+        .alarm-item { text-align: left; padding: 20px; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 20px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: 0.3s; }
+        .alarm-item:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+        
+        .alarm-title { font-size: 1.8rem; font-weight: 800; color: #333; margin-bottom: 5px; display: block; line-height: 1.2; }
+        .alarm-time { font-size: 1.6rem; font-weight: bold; color: #5a7da3; margin-bottom: 10px; display: block; }
+        
+        .tag { display: inline-block; background: #f1f4f8; color: #555; padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; margin-right: 5px; margin-top: 5px; border: 1px solid #d1d9e6; }
+        .alarm-item.done { background: #f9f9f9; opacity: 0.7; border-color: #eee; }
+        .delete-btn { position: absolute; right: 12px; top: 12px; color: #cbd5e0; border: none; background: none; cursor: pointer; font-size: 1.5rem; transition: 0.3s; }
+        .delete-btn:hover { color: #d93025; }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘系統</h2>
+    <h2 style="color: #4a4a4a;">班級鬧鐘系統</h2>
     
     <div class="clock-container">
         <div id="liveClock" class="clock">00:00:00</div>
@@ -71,7 +83,9 @@
             </div>
             <div class="input-item" style="flex: 1.5;"> <label>時間與播放方式</label>
                 <div style="display: flex; gap: 5px;">
-                    <input type="time" id="alarmTime" style="width: 160px;"> <select id="playMode" style="flex: 1;"> <option value="seq">先語音➔鈴聲</option>
+                    <input type="time" id="alarmTime" style="width: 160px;"> 
+                    <select id="playMode" style="flex: 1;"> 
+                        <option value="seq">先語音➔鈴聲</option>
                         <option value="sim">語音/鈴聲同步</option>
                     </select>
                 </div>
@@ -119,7 +133,7 @@
 <audio id="bellPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
-    /* 此部分邏輯與穩定版完全一致 */
+    /* 邏輯完全保留自您提供的功能確認版01 */
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
@@ -178,7 +192,7 @@
         isMonitoring = true;
         const btn = document.getElementById('authBtn');
         btn.innerText = "✅ 監控運行中";
-        btn.style.background = "#34a853";
+        btn.style.background = "#68a37d";
         updateUI();
         speak("系統啟動");
     }
@@ -258,7 +272,7 @@
                 <span class="alarm-title">${a.name}</span>
                 <span class="alarm-time">${a.time}</span>
                 <div>
-                    ${a.triggeredToday ? '<span class="tag" style="background:#666;color:#fff;border:none;">✅ 今日已響</span>' : ''}
+                    ${a.triggeredToday ? '<span class="tag" style="background:#888;color:#fff;border:none;">✅ 今日已響</span>' : ''}
                     <span class="tag">🔁 ${rMap[a.repeat]}</span>
                     <span class="tag">📻 ${pMap[a.playMode]}</span>
                     <span class="tag">🎵 ${a.soundName}</span>
