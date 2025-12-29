@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級語音鬧鐘系統</title>
+    <title>班級強力語音鬧鐘 (音量加倍版)</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; }
@@ -14,43 +14,44 @@
         .btn-add { background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .btn-stop { background: #d93025; color: white; border: none; cursor: pointer; font-weight: bold; display: none; margin-top: 15px; padding: 15px; }
         .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .flash-bg { animation: alert-flash 0.5s infinite; }
-        @keyframes alert-flash { 50% { background-color: #f8d7da; } }
+        .flash-bg { animation: alert-flash 0.3s infinite; }
+        @keyframes alert-flash { 50% { background-color: #ff0000; color: white; } }
     </style>
 </head>
-<body onclick="unlockAudio()">
+<body onclick="initAudioContext()">
 
 <div class="container">
-    <h2>班級語音鬧鐘系統</h2>
+    <h2>班級鬧鐘 (音量加倍版)</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
-    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 啟動系統並授權語音</button>
-    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 立即關閉鈴聲/語音</button>
+    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 點擊授權並開啟最強音量</button>
+    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 立即關閉鬧鐘</button>
 
     <div class="setup-group">
-        <label>鬧鐘標題 (會唸出來)：</label>
-        <input type="text" id="alarmName" placeholder="例如：各位老師同學，打掃時間到了">
+        <label>鬧鐘標題 (加倍大聲)：</label>
+        <input type="text" id="alarmName" placeholder="打掃時間到了！">
         <label>時間 (時:分)：</label>
         <input type="time" id="alarmTime">
-        <label>響鈴長度 (語音唸完後開始計時)：</label>
+        <label>響鈴長度：</label>
         <select id="alarmDuration">
             <option value="5">5 秒</option>
             <option value="10">10 秒</option>
-            <option value="15">15 秒</option>
             <option value="20">20 秒</option>
+            <option value="30">30 秒</option>
         </select>
-        <button class="btn-add" onclick="addNewAlarm()">+ 新增語音鬧鐘</button>
+        <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
     </div>
 
     <div id="alarmListArea"></div>
 </div>
 
-<audio id="audioElement" loop></audio>
+<audio id="audioElement" loop crossorigin="anonymous"></audio>
 
 <script>
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
+    let audioContext, gainNode, source;
 
     // 啟動時間顯示
     setInterval(tick, 500);
@@ -72,33 +73,41 @@
         }
     }
 
-    function startSystem() {
-        isMonitoring = true;
-        const btn = document.getElementById('authBtn');
-        btn.innerText = "✅ 監控中 (語音功能已準備)";
-        btn.style.background = "#34a853";
-        unlockAudio();
-        speak("鬧鐘系統已就緒");
+    // 初始化強效音量節點
+    function initAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const audio = document.getElementById('audioElement');
+            source = audioContext.createMediaElementSource(audio);
+            gainNode = audioContext.createGain();
+            
+            // 音量倍增：設定為 2.0 (200% 音量)
+            gainNode.gain.value = 2.0; 
+            
+            source.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 預載預設鈴聲
+            audio.src = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+        }
     }
 
-    function unlockAudio() {
-        const a = document.getElementById('audioElement');
-        a.src = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
-        a.play().then(() => { a.pause(); a.currentTime = 0; });
+    function startSystem() {
+        initAudioContext();
+        isMonitoring = true;
+        const btn = document.getElementById('authBtn');
+        btn.innerText = "🔊 系統監控中 (音量已放大)";
+        btn.style.background = "#34a853";
+        speak("音量系統已校準至最高");
     }
 
     function speak(text, callback) {
-        // 先停止之前的語音，避免重疊
         window.speechSynthesis.cancel();
-        
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'zh-TW';
-        msg.rate = 0.9; // 語速稍微放慢一點更清楚
-        
-        if (callback) {
-            msg.onend = callback;
-        }
-        
+        msg.volume = 1.0; // TTS 設定最大值
+        msg.rate = 0.8;   // 稍微放慢，讓大聲更清晰
+        if (callback) msg.onend = callback;
         window.speechSynthesis.speak(msg);
     }
 
@@ -122,31 +131,25 @@
                 count++;
                 speak(alarm.name, repeatSpeak);
             } else {
-                // 標題唸完 3 次後，開始播放鈴聲
                 startRinging(alarm.duration);
             }
         };
-
         repeatSpeak();
     }
 
     function startRinging(duration) {
+        if (audioContext.state === 'suspended') audioContext.resume();
         const player = document.getElementById('audioElement');
         player.play();
-        
-        // 設定鈴聲播放的自動停止時間
         autoStopTimer = setTimeout(killAlarm, duration * 1000);
     }
 
     function killAlarm() {
-        // 停止語音
         window.speechSynthesis.cancel();
-        // 停止鈴聲
         if (autoStopTimer) clearTimeout(autoStopTimer);
         const player = document.getElementById('audioElement');
         player.pause();
         player.currentTime = 0;
-        
         document.body.classList.remove('flash-bg');
         document.getElementById('stopBtn').style.display = "none";
     }
