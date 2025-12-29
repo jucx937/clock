@@ -265,10 +265,27 @@
         });
     }
 
-    function unlockAudio() {
-        const bp = document.getElementById('bellPlayer');
-        if (bp.paused) bp.play().then(()=>bp.pause()).catch(()=>{});
-    }
+// 修改後的解鎖函數
+let isAudioUnlocked = false; // 新增一個標記，記錄是否解鎖過
+
+function unlockAudio() {
+    // 如果已經解鎖過，或者鬧鐘正在響，就不要再執行解鎖動作
+    if (isAudioUnlocked || document.body.classList.contains('flash-bg')) return;
+
+    const bp = document.getElementById('bellPlayer');
+    // 只有在靜音且沒解鎖過的情況下才做一次性解鎖
+    isAudioUnlocked = true; 
+    const originalSrc = bp.src;
+    bp.volume = 0; // 先靜音
+    bp.play().then(() => {
+        bp.pause();
+        bp.volume = 1.0; // 恢復音量
+        console.log("音訊權限已順利解鎖");
+    }).catch(e => {
+        isAudioUnlocked = false; // 如果失敗則下次點擊再試
+    });
+}
 </script>
 </body>
 </html>
+
