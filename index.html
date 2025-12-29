@@ -57,20 +57,13 @@
     };
 
     // 4. 避開音訊權限失效：點擊按鈕才正式啟動
-    function activateContext() {
-        document.getElementById('audioPlayer').play().then(() => {
-            document.getElementById('audioPlayer').pause();
-            document.getElementById('audioPlayer').currentTime = 0;
-            
-            isActive = true;
-            alarmTime = document.getElementById('alarmTime').value;
-            document.getElementById('status').innerText = `狀態：監控中 (${alarmTime})`;
-            document.getElementById('startBtn').innerText = "鬧鐘設定成功！";
-            document.getElementById('startBtn').style.backgroundColor = "#34a853";
-        }).catch(e => {
-            alert("請先點擊頁面任何地方以允許聲音播放");
-        });
-    }
+function activateContext() {
+    isActive = true;
+    alarmTime = document.getElementById('alarmTime').value;
+    document.getElementById('status').innerText = `狀態：監控中 (${alarmTime})`;
+    document.getElementById('startBtn').innerText = "鬧鐘設定成功！";
+    document.getElementById('startBtn').style.backgroundColor = "#34a853";
+}
 
     function checkAlarm() {
         const now = new Date();
@@ -117,4 +110,5 @@
 
 </script>
 </body>
+
 </html>
