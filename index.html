@@ -249,7 +249,30 @@
         localStorage.setItem('savedAlarms', JSON.stringify(alarms));
         updateUI();
     }
+// 強制解鎖並設定滿格音量
+function unlockAudio() {
+    if (isAudioUnlocked) return;
+    const bp = document.getElementById('bellPlayer');
+    isAudioUnlocked = true;
+    
+    bp.volume = 0; // 解鎖瞬間靜音
+    bp.play().then(() => {
+        bp.pause();
+        bp.volume = 1.0; // 成功後強制設定為 100% 音量
+    }).catch(() => { isAudioUnlocked = false; });
+}
 
+// 強化語音播報音量與語調
+function speak(text, callback) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'zh-TW';
+    msg.volume = 1.0; // 強制語音音量最大化
+    msg.rate = 1.0;   // 標準語速
+    msg.pitch = 1.0;  // 標準音調
+    if (callback) msg.onend = callback;
+    window.speechSynthesis.speak(msg);
+}
     function updateUI() {
         const list = document.getElementById('alarmListArea');
         list.innerHTML = "";
@@ -277,3 +300,4 @@
 </script>
 </body>
 </html>
+
