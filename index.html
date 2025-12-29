@@ -2,38 +2,41 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級全功能鬧鐘 - 穩定修復版</title>
+    <title>班級全功能鬧鐘 - 智慧重複版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; width: 450px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
+        .container { background: white; width: 480px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
         .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 15px 0; background: #e8f0fe; border-radius: 15px; padding: 10px; line-height: 1.2; }
         .setup-group { background: #fafafa; padding: 15px; border-radius: 15px; border: 1px solid #eee; text-align: left; }
-        label { display: block; font-size: 0.85rem; color: #666; margin-top: 10px; }
+        label { display: block; font-size: 0.85rem; color: #666; margin-top: 10px; font-weight: bold; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
         .btn-main { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; height: 50px; margin-top: 10px; }
         .btn-add { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .btn-stop { background: #d93025; color: white; border: none; font-weight: bold; display: none; padding: 20px; font-size: 1.5rem; margin-top: 15px; border-radius: 10px; }
         .sound-row { display: flex; gap: 8px; align-items: flex-end; }
         .btn-listen { flex: 1; background: #6c757d; color: white; border: none; cursor: pointer; height: 42px; border-radius: 8px; }
-        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; background: #fff; margin-top: 8px; border-radius: 10px; }
+        .alarm-item { text-align: left; padding: 12px; border-bottom: 1px solid #eee; background: #fff; margin-top: 8px; border-radius: 10px; position: relative; }
+        .alarm-info { font-size: 0.9rem; color: #555; }
+        .delete-btn { position: absolute; right: 10px; top: 10px; color: red; border: none; background: none; cursor: pointer; font-weight: bold; width: auto; }
         .flash-bg { animation: alert-flash 0.4s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff3333; color: white; } }
+        #customDateGroup { display: none; }
     </style>
 </head>
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級全功能鬧鐘</h2>
+    <h2>班級鬧鐘 - 智慧重複版</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
     <button id="authBtn" class="btn-main" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
     <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
 
     <div class="setup-group">
-        <label><b>1. 鬧鐘標題 (播放語音)：</b></label>
+        <label>1. 鬧鐘標題 (播放語音)：</label>
         <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
         
-        <label><b>2. 設定時間與響鈴秒數：</b></label>
+        <label>2. 設定時間與響鈴秒數：</label>
         <div style="display:flex; gap:10px;">
             <input type="time" id="alarmTime" style="flex:2">
             <select id="alarmDuration" style="flex:1">
@@ -44,7 +47,28 @@
             </select>
         </div>
 
-        <label><b>3. 選擇鈴聲與試聽：</b></label>
+        <label>3. 重複週期：</label>
+        <select id="repeatSelect" onchange="toggleDateInput()">
+            <option value="once">僅一次</option>
+            <option value="daily">每天</option>
+            <option value="weekday">平日 (週一至週五)</option>
+            <option value="weekend">週末 (週六、週日)</option>
+            <option value="mon">每週一</option>
+            <option value="tue">每週二</option>
+            <option value="wed">每週三</option>
+            <option value="thu">每週四</option>
+            <option value="fri">每週五</option>
+            <option value="sat">每週六</option>
+            <option value="sun">每週日</option>
+            <option value="custom">自訂月日 (例如 12/30)</option>
+        </select>
+
+        <div id="customDateGroup">
+            <label>選擇自訂日期：</label>
+            <input type="date" id="customDate">
+        </div>
+
+        <label>4. 選擇鈴聲與試聽：</label>
         <div class="sound-row">
             <select id="soundSelect" style="flex:2.5; height:42px;">
                 <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
@@ -53,10 +77,10 @@
                 <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
                 <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
             </select>
-            <button class="btn-listen" onclick="previewSound()">🔊 試聽</button>
+            <button class="btn-listen" onclick="previewSound()">試聽</button>
         </div>
 
-        <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
+        <button class="btn-add" onclick="addNewAlarm()">+ 新增此鬧鐘</button>
     </div>
 
     <div id="alarmListArea"></div>
@@ -69,21 +93,49 @@
     let isMonitoring = false;
     let autoStopTimer = null;
 
-    // 更新時間邏輯
     setInterval(() => {
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
         document.getElementById('liveClock').innerText = timeStr;
+
         if (isMonitoring) {
             const currentHM = timeStr.substring(0, 5);
-            alarms.forEach(a => {
-                if (currentHM === a.time && !a.triggeredToday) executeAlarm(a);
+            alarms.forEach((a, index) => {
+                if (currentHM === a.time && !a.triggeredToday && shouldAlarmRing(a, now)) {
+                    executeAlarm(a, index);
+                }
                 if (currentHM !== a.time) a.triggeredToday = false;
             });
         }
     }, 1000);
 
-    // 啟動與解鎖音訊
+    function shouldAlarmRing(alarm, now) {
+        const day = now.getDay(); // 0(日) 到 6(六)
+        const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const monthDay = dateStr.substring(5, 10); // MM-DD
+
+        switch (alarm.repeat) {
+            case 'once': return true;
+            case 'daily': return true;
+            case 'weekday': return day >= 1 && day <= 5;
+            case 'weekend': return day === 0 || day === 6;
+            case 'mon': return day === 1;
+            case 'tue': return day === 2;
+            case 'wed': return day === 3;
+            case 'thu': return day === 4;
+            case 'fri': return day === 5;
+            case 'sat': return day === 6;
+            case 'sun': return day === 0;
+            case 'custom': return alarm.customDate === dateStr;
+            default: return false;
+        }
+    }
+
+    function toggleDateInput() {
+        const val = document.getElementById('repeatSelect').value;
+        document.getElementById('customDateGroup').style.display = (val === 'custom') ? 'block' : 'none';
+    }
+
     function unlockAudio() {
         const bp = document.getElementById('bellPlayer');
         if (bp.paused) {
@@ -94,41 +146,28 @@
 
     function startMonitoring() {
         isMonitoring = true;
-        const btn = document.getElementById('authBtn');
-        btn.innerText = "✅ 監控運行中";
-        btn.style.background = "#34a853";
+        document.getElementById('authBtn').innerText = "✅ 監控運行中";
+        document.getElementById('authBtn').style.background = "#34a853";
         updateUI();
-        speak("鬧鐘系統已就緒");
+        speak("系統啟動");
     }
 
-    // 試聽功能修正版
     function previewSound() {
         const bp = document.getElementById('bellPlayer');
-        const selectedSound = document.getElementById('soundSelect').value;
-        
-        bp.pause(); // 先停止當前播放
-        bp.src = selectedSound;
-        bp.loop = false; // 試聽不循環
-        bp.load(); // 強制重新載入
-        
-        bp.play().then(() => {
-            // 試聽 3 秒後停止
-            setTimeout(() => {
-                if (!isMonitoring || (isMonitoring && bp.loop === false)) {
-                    bp.pause();
-                    bp.currentTime = 0;
-                }
-            }, 3000);
-        }).catch(e => alert("音訊加載失敗，請稍後再試"));
+        bp.pause();
+        bp.src = document.getElementById('soundSelect').value;
+        bp.loop = false;
+        bp.load();
+        bp.play();
+        setTimeout(() => { if(bp.loop === false) { bp.pause(); bp.currentTime = 0; } }, 3000);
     }
 
-    // 語音播放邏輯
     function speak(text, callback) {
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'zh-TW';
-        msg.volume = 1.0; 
-        msg.rate = 0.85; 
+        msg.volume = 1.0;
+        msg.rate = 0.85;
         if (callback) msg.onend = callback;
         window.speechSynthesis.speak(msg);
     }
@@ -138,13 +177,20 @@
         const n = document.getElementById('alarmName').value || "時間到了";
         const d = document.getElementById('alarmDuration').value;
         const s = document.getElementById('soundSelect').value;
+        const r = document.getElementById('repeatSelect').value;
+        const cd = document.getElementById('customDate').value;
+
         if (!t) return alert("請設定時間");
-        
-        alarms.push({ time: t, name: n, duration: d, sound: s, triggeredToday: false });
+        if (r === 'custom' && !cd) return alert("請選擇日期");
+
+        alarms.push({ 
+            time: t, name: n, duration: d, sound: s, 
+            repeat: r, customDate: cd, triggeredToday: false 
+        });
         saveData();
     }
 
-    function executeAlarm(alarm) {
+    function executeAlarm(alarm, index) {
         alarm.triggeredToday = true;
         document.body.classList.add('flash-bg');
         document.getElementById('stopBtn').style.display = "block";
@@ -159,7 +205,10 @@
                 bp.src = alarm.sound;
                 bp.loop = true;
                 bp.play();
-                autoStopTimer = setTimeout(killAlarm, alarm.duration * 1000);
+                autoStopTimer = setTimeout(() => {
+                    killAlarm();
+                    if (alarm.repeat === 'once') deleteAlarm(index);
+                }, alarm.duration * 1000);
             }
         };
         repeatSpeak();
@@ -188,11 +237,22 @@
     function updateUI() {
         const container = document.getElementById('alarmListArea');
         container.innerHTML = "";
+        const repeatNames = {
+            once: "僅一次", daily: "每天", weekday: "平日", weekend: "週末",
+            mon: "每週一", tue: "每週二", wed: "每週三", thu: "每週四", fri: "每週五", sat: "每週六", sun: "每週日", custom: "自訂日期"
+        };
+
         alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
             const div = document.createElement('div');
             div.className = 'alarm-item';
-            div.innerHTML = `<span><b>${a.time}</b> - ${a.name}</span>
-                             <button onclick="deleteAlarm(${i})" style="color:red; border:none; background:none; cursor:pointer; width:auto;">刪除</button>`;
+            let repeatText = repeatNames[a.repeat];
+            if (a.repeat === 'custom') repeatText += ` (${a.customDate})`;
+
+            div.innerHTML = `
+                <div><b>${a.time}</b> [${repeatText}]</div>
+                <div class="alarm-info">${a.name}</div>
+                <button class="delete-btn" onclick="deleteAlarm(${i})">刪除</button>
+            `;
             container.appendChild(div);
         });
     }
