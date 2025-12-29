@@ -2,58 +2,84 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘 - 高音量自動語音版</title>
+    <title>班級鬧鐘 - 寵物登入全功能版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 450px; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
-        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 20px 0; background: #e8f0fe; border-radius: 15px; padding: 15px; }
-        .setup-group { background: #fafafa; padding: 20px; border-radius: 15px; border: 1px solid #eee; text-align: left; }
-        input, select, button { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
-        .btn-system { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-add { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .btn-stop { background: #d93025; color: white; border: none; font-weight: bold; display: none; padding: 20px; font-size: 1.5rem; margin-top: 15px; }
-        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fff; margin-top: 5px; border-radius: 10px; }
+        .login-box { padding: 20px; }
+        #appContent { display: none; } /* 登入前隱藏 */
+        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 15px 0; background: #e8f0fe; border-radius: 15px; padding: 10px; }
+        .setup-group { background: #fafafa; padding: 15px; border-radius: 15px; border: 1px solid #eee; text-align: left; }
+        label { display: block; font-size: 0.85rem; color: #666; margin-top: 10px; }
+        input, select, button { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .btn-main { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; height: 45px; }
+        .btn-add { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-stop { background: #d93025; color: white; border: none; font-weight: bold; display: none; padding: 15px; font-size: 1.2rem; margin-top: 10px; }
+        .sound-row { display: flex; gap: 5px; }
+        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: #fff; margin-top: 5px; border-radius: 8px; }
         .flash-bg { animation: alert-flash 0.5s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff3333; color: white; } }
     </style>
 </head>
-<body onclick="unlockAudio()">
+<body onclick="initAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘系統</h2>
-    <div id="liveClock" class="clock">00:00:00</div>
-    
-    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 點擊啟動監控</button>
-    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 關閉鈴聲</button>
-
-    <div class="setup-group">
-        <label><b>鬧鐘語音內容 (老師自己打)：</b></label>
-        <input type="text" id="alarmName" placeholder="例如：老師同學，打掃時間到了">
-        
-        <label style="display:block; margin-top:15px;"><b>設定時間與長度：</b></label>
-        <div style="display:flex; gap:10px;">
-            <input type="time" id="alarmTime" style="flex:2">
-            <select id="alarmDuration" style="flex:1">
-                <option value="5">5秒</option>
-                <option value="10">10秒</option>
-                <option value="20">20秒</option>
-            </select>
-        </div>
-
-        <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
+    <div id="loginBox" class="login-box">
+        <h2>歡迎使用班級鬧鐘</h2>
+        <p>請輸入您的寵物名稱登入</p>
+        <input type="text" id="petNameInput" placeholder="例如：小花貓">
+        <button class="btn-main" style="margin-top:20px;" onclick="login()">進入系統</button>
     </div>
-    <div id="alarmListArea"></div>
+
+    <div id="appContent">
+        <h3 id="userTitle"></h3>
+        <div id="liveClock" class="clock">00:00:00</div>
+        
+        <button id="authBtn" class="btn-main" style="background:#6c757d;" onclick="startMonitoring()">1. 點擊啟動監控與聲音</button>
+        <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴</button>
+
+        <div class="setup-group">
+            <label>1. 鬧鐘標題 (播放語音)：</label>
+            <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
+            
+            <label>2. 設定時間與響鈴秒數：</label>
+            <div style="display:flex; gap:5px;">
+                <input type="time" id="alarmTime" style="flex:2">
+                <select id="alarmDuration" style="flex:1">
+                    <option value="5">5秒</option>
+                    <option value="10">10秒</option>
+                    <option value="20">20秒</option>
+                </select>
+            </div>
+
+            <label>3. 選擇鈴聲：</label>
+            <div class="sound-row">
+                <select id="soundSelect" style="flex:3">
+                    <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
+                    <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
+                    <option value="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3">快節奏警報</option>
+                    <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
+                    <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
+                </select>
+                <button style="flex:1; background:#6c757d; color:white;" onclick="previewSound()">試聽</button>
+            </div>
+
+            <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
+        </div>
+        <div id="alarmListArea"></div>
+        <button style="margin-top:20px; background:none; border:none; color:blue; text-decoration:underline; cursor:pointer;" onclick="location.reload()">切換使用者</button>
+    </div>
 </div>
 
-<audio id="voicePlayer" crossorigin="anonymous"></audio>
 <audio id="bellPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
-    let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
+    let currentPet = "";
+    let alarms = [];
     let isMonitoring = false;
     let autoStopTimer = null;
 
-    // 每秒更新時間
+    // 更新時間
     setInterval(() => {
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
@@ -67,25 +93,59 @@
         }
     }, 1000);
 
-    function startSystem() {
-        isMonitoring = true;
-        document.getElementById('authBtn').innerText = "✅ 監控運行中";
-        document.getElementById('authBtn').style.background = "#34a853";
+    function login() {
+        currentPet = document.getElementById('petNameInput').value.trim();
+        if (!currentPet) return alert("請輸入名稱");
+        
+        document.getElementById('loginBox').style.display = "none";
+        document.getElementById('appContent').style.display = "block";
+        document.getElementById('userTitle').innerText = "🐾 使用者：" + currentPet;
+        
+        // 讀取該寵物專屬鬧鐘
+        alarms = JSON.parse(localStorage.getItem('alarms_' + currentPet)) || [];
         updateUI();
     }
 
-    function unlockAudio() {
-        document.getElementById('voicePlayer').play().catch(()=>{});
-        document.getElementById('bellPlayer').play().catch(()=>{});
+    function initAudio() {
+        const bp = document.getElementById('bellPlayer');
+        bp.play().then(() => bp.pause()).catch(() => {});
+    }
+
+    function startMonitoring() {
+        isMonitoring = true;
+        document.getElementById('authBtn').innerText = "✅ 系統監控中";
+        document.getElementById('authBtn').style.background = "#34a853";
+        // 預熱語音
+        speak("系統啟動");
+    }
+
+    function previewSound() {
+        const bp = document.getElementById('bellPlayer');
+        bp.src = document.getElementById('soundSelect').value;
+        bp.loop = false;
+        bp.play();
+        setTimeout(() => { bp.pause(); bp.currentTime = 0; }, 3000);
+    }
+
+    function speak(text, callback) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        msg.volume = 1.0; 
+        msg.rate = 0.8;
+        if (callback) msg.onend = callback;
+        window.speechSynthesis.speak(msg);
     }
 
     function addNewAlarm() {
         const t = document.getElementById('alarmTime').value;
         const n = document.getElementById('alarmName').value || "時間到了";
         const d = document.getElementById('alarmDuration').value;
+        const s = document.getElementById('soundSelect').value;
         if (!t) return alert("請輸入時間");
-        alarms.push({ time: t, name: n, duration: d, triggeredToday: false });
-        localStorage.setItem('savedAlarms', JSON.stringify(alarms));
+        
+        alarms.push({ time: t, name: n, duration: d, sound: s, triggeredToday: false });
+        localStorage.setItem('alarms_' + currentPet, JSON.stringify(alarms));
         updateUI();
     }
 
@@ -94,30 +154,25 @@
         document.body.classList.add('flash-bg');
         document.getElementById('stopBtn').style.display = "block";
 
-        // 使用 Google TTS 引擎 (音量較大且穩定)
-        const voiceUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(alarm.name)}&tl=zh-TW&client=tw-ob`;
-        const vp = document.getElementById('voicePlayer');
-        vp.src = voiceUrl;
-        
         let count = 0;
-        vp.onended = () => {
-            count++;
-            if (count < 3) vp.play();
-            else startBell(alarm.duration);
+        const repeatSpeak = () => {
+            if (count < 3) {
+                count++;
+                speak(alarm.name, repeatSpeak);
+            } else {
+                const bp = document.getElementById('bellPlayer');
+                bp.src = alarm.sound;
+                bp.loop = true;
+                bp.play();
+                autoStopTimer = setTimeout(killAlarm, alarm.duration * 1000);
+            }
         };
-        vp.play();
-    }
-
-    function startBell(duration) {
-        const bp = document.getElementById('bellPlayer');
-        bp.src = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
-        bp.play();
-        autoStopTimer = setTimeout(killAlarm, duration * 1000);
+        repeatSpeak();
     }
 
     function killAlarm() {
+        window.speechSynthesis.cancel();
         if (autoStopTimer) clearTimeout(autoStopTimer);
-        document.getElementById('voicePlayer').pause();
         const bp = document.getElementById('bellPlayer');
         bp.pause();
         bp.currentTime = 0;
@@ -127,7 +182,7 @@
 
     function deleteAlarm(i) {
         alarms.splice(i, 1);
-        localStorage.setItem('savedAlarms', JSON.stringify(alarms));
+        localStorage.setItem('alarms_' + currentPet, JSON.stringify(alarms));
         updateUI();
     }
 
@@ -138,7 +193,7 @@
             const div = document.createElement('div');
             div.className = 'alarm-item';
             div.innerHTML = `<span><b>${a.time}</b> - ${a.name}</span>
-                             <button onclick="deleteAlarm(${i})" style="color:red; border:none; background:none; cursor:pointer;">刪除</button>`;
+                             <button onclick="deleteAlarm(${i})" style="color:red; border:none; background:none; cursor:pointer; width:auto;">刪除</button>`;
             container.appendChild(div);
         });
     }
