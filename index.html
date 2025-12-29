@@ -4,10 +4,18 @@
     <meta charset="UTF-8">
     <title>班級鬧鐘系統</title>
     <style>
-        /* 基礎風格與格子排版保持不變 */
+        /* 基礎風格保持不變 */
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; width: 1000px; max-width: 95vw; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
-        .clock { font-size: 4rem; font-weight: bold; color: #1a73e8; margin-bottom: 20px; background: #e8f0fe; border-radius: 15px; padding: 15px; display: inline-block; min-width: 350px; }
+        
+        /* 時鐘區域優化：讓容器可以裝下兩行文字 */
+        .clock-container { background: #e8f0fe; border-radius: 15px; padding: 15px; display: inline-block; min-width: 380px; margin-bottom: 20px; }
+        .clock { font-size: 4rem; font-weight: bold; color: #1a73e8; line-height: 1.1; }
+        
+        /* 新增日期樣式 */
+        .date-display { font-size: 1.5rem; color: #555; font-weight: bold; margin-top: 5px; border-top: 1px solid #c4d7f5; padding-top: 5px; }
+        
+        /* 鬧鐘清單排版與其餘設定保持不變 */
         .setup-group { background: #fafafa; padding: 25px; border-radius: 15px; border: 1px solid #eee; text-align: left; margin-bottom: 30px; max-width: 650px; margin-left: auto; margin-right: auto; }
         label { display: block; font-size: 1rem; color: #444; margin-top: 12px; font-weight: bold; }
         input, select, button { width: 100%; padding: 14px; margin-top: 8px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1.1rem; }
@@ -25,7 +33,6 @@
         .alarm-item.done .alarm-title { text-decoration: line-through; color: #888; }
         .alarm-item.done .alarm-time { color: #888; }
         .delete-btn { position: absolute; right: 15px; top: 15px; color: #ccc; border: none; background: none; cursor: pointer; font-size: 1.8rem; width: auto; padding: 5px; }
-        .delete-btn:hover { color: #d93025; }
         @media (max-width: 950px) { #alarmListArea { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { #alarmListArea { grid-template-columns: 1fr; } }
     </style>
@@ -34,7 +41,11 @@
 
 <div class="container">
     <h2>班級鬧鐘系統</h2>
-    <div id="liveClock" class="clock">00:00:00</div>
+    
+    <div class="clock-container">
+        <div id="liveClock" class="clock">00:00:00</div>
+        <div id="liveDate" class="date-display">0000/00/00 (星期)</div>
+    </div>
     
     <div style="margin-bottom: 20px;">
         <button id="authBtn" class="btn-main" style="width: 350px;" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
@@ -90,11 +101,18 @@
     let lastDate = new Date().getDate();
     let isAudioUnlocked = false;
 
-    // 時鐘主迴圈
+    // 核心監控主迴圈 - 僅在更新文字處加入日期顯示
     setInterval(() => {
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
         document.getElementById('liveClock').innerText = timeStr;
+
+        // --- 新增：顯示年月日與星期 ---
+        const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const dateStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} (${days[now.getDay()]})`;
+        document.getElementById('liveDate').innerText = dateStr;
+        // ---------------------------
+
         if (now.getDate() !== lastDate) {
             lastDate = now.getDate();
             alarms.forEach(a => a.triggeredToday = false);
@@ -110,6 +128,7 @@
         }
     }, 1000);
 
+    // 基礎邏輯與功能完全保留
     function isCorrectDay(mode, day) {
         if (mode === 'once' || mode === 'daily') return true;
         if (mode === 'weekday') return day >= 1 && day <= 5;
@@ -118,26 +137,19 @@
         return map[mode] === day;
     }
 
-    // 核心音量控制：解鎖時強制設定 1.0 (最大音量)
     function unlockAudio() {
         if (isAudioUnlocked) return;
         const bp = document.getElementById('bellPlayer');
         isAudioUnlocked = true;
         bp.volume = 0; 
-        bp.play().then(() => {
-            bp.pause();
-            bp.volume = 1.0; 
-        }).catch(() => { isAudioUnlocked = false; });
+        bp.play().then(() => { bp.pause(); bp.volume = 1.0; }).catch(() => { isAudioUnlocked = false; });
     }
 
-    // 核心音量控制：強化語音音量
     function speak(text, callback) {
         window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text);
         msg.lang = 'zh-TW';
-        msg.volume = 1.0; // 強制設定語音最大聲
-        msg.rate = 1.0;
-        msg.pitch = 1.0;
+        msg.volume = 1.0; 
         if (callback) msg.onend = callback;
         window.speechSynthesis.speak(msg);
     }
@@ -156,27 +168,15 @@
         document.getElementById('stopBtn').style.display = "block";
         const bp = document.getElementById('bellPlayer');
         bp.src = alarm.sound;
-        bp.volume = 1.0; // 響鈴時再次確認音量最大
+        bp.volume = 1.0;
         bp.loop = true;
-
         let count = 0;
         const playVoice = () => {
-            if (count < 3) {
-                count++;
-                speak(alarm.name, playVoice);
-            } else if (alarm.playMode === 'seq') {
-                bp.play();
-                setTimer(alarm, index);
-            }
+            if (count < 3) { count++; speak(alarm.name, playVoice); } 
+            else if (alarm.playMode === 'seq') { bp.play(); setTimer(alarm, index); }
         };
-
-        if (alarm.playMode === 'sim') {
-            bp.play();
-            playVoice();
-            setTimer(alarm, index);
-        } else {
-            playVoice();
-        }
+        if (alarm.playMode === 'sim') { bp.play(); playVoice(); setTimer(alarm, index); } 
+        else { playVoice(); }
     }
 
     function setTimer(alarm, index) {
