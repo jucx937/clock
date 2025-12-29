@@ -2,71 +2,70 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級最強鬧鐘 - 語音暴力放大版</title>
+    <title>班級鬧鐘 - 穩定 MP3 語音版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; width: 420px; padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; }
-        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 20px 0; background: #e8f0fe; border-radius: 10px; padding: 10px; line-height: 1.2; }
+        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 20px 0; background: #e8f0fe; border-radius: 10px; padding: 10px; }
         .setup-group { background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
-        label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 5px; margin-top: 10px; }
+        label { display: block; font-size: 0.85rem; color: #666; margin-top: 10px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
-        .sound-row { display: flex; gap: 10px; align-items: center; }
-        .btn-listen { width: 80px; background: #6c757d; color: white; border: none; cursor: pointer; font-size: 0.8rem; }
         .btn-system { background: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; }
         .btn-add { background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }
         .btn-stop { background: #d93025; color: white; border: none; cursor: pointer; font-weight: bold; display: none; margin-top: 15px; padding: 15px; font-size: 1.2rem; }
-        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
         .flash-bg { animation: alert-flash 0.3s infinite; }
         @keyframes alert-flash { 50% { background-color: #ff0000; color: white; } }
     </style>
 </head>
-<body onclick="initAudioContext()">
+<body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘 (語音暴力放大版)</h2>
+    <h2>班級鬧鐘 (穩定 MP3 版)</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
-    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 點擊授權啟動 (音量暴力放大)</button>
-    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
+    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 點擊啟動監控系統</button>
+    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 關閉鬧鐘</button>
 
     <div class="setup-group">
-        <label>1. 鬧鐘標題 (加倍大聲)：</label>
-        <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
-        <label>2. 設定時間：</label>
-        <input type="time" id="alarmTime">
-        <label>3. 響鈴長度：</label>
-        <select id="alarmDuration">
-            <option value="5">5 秒</option>
-            <option value="10">10 秒</option>
-            <option value="20">20 秒</option>
+        <label>1. 選擇語音訊息 (先唸 3 次)：</label>
+        <select id="voiceSelect">
+            <option value="voice1.mp3">打掃時間到了 (需自備 MP3)</option>
+            <option value="voice2.mp3">各位老師同學，下課時間到了</option>
+            <option value="none">不播放語音，只響鈴</option>
         </select>
-        <label>4. 鈴聲選擇與試聽：</label>
-        <div class="sound-row">
-            <select id="soundSelect">
-                <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
-                <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
-                <option value="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3">快節奏警報</option>
-                <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
+
+        <label>2. 設定時間與響鈴長度：</label>
+        <div style="display:flex; gap:5px;">
+            <input type="time" id="alarmTime" style="flex:2">
+            <select id="alarmDuration" style="flex:1">
+                <option value="5">5秒</option>
+                <option value="10">10秒</option>
+                <option value="20">20秒</option>
             </select>
-            <button class="btn-listen" onclick="previewSound()">🔊 試聽</button>
         </div>
+
+        <label>3. 選擇背景鈴聲：</label>
+        <select id="soundSelect">
+            <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
+            <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
+            <option value="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3">快節奏警報</option>
+        </select>
+
         <button class="btn-add" onclick="addNewAlarm()">+ 新增此鬧鐘</button>
     </div>
     <div id="alarmListArea"></div>
 </div>
 
-<audio id="audioElement" loop crossorigin="anonymous"></audio>
+<audio id="voicePlayer" crossorigin="anonymous"></audio>
+<audio id="bgPlayer" loop crossorigin="anonymous"></audio>
 
 <script>
     let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
     let isMonitoring = false;
     let autoStopTimer = null;
-    let audioContext, gainNode, source;
 
-    setInterval(tick, 500);
-    updateUI();
-
-    function tick() {
+    setInterval(() => {
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0];
         document.getElementById('liveClock').innerText = timeStr;
@@ -77,102 +76,72 @@
                 if (currentHM !== a.time) a.triggeredToday = false;
             });
         }
-    }
+    }, 1000);
 
-    function initAudioContext() {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const audio = document.getElementById('audioElement');
-            source = audioContext.createMediaElementSource(audio);
-            gainNode = audioContext.createGain();
-            // 音量設定：原本是 2.0，現在嘗試拉高到更強的水平
-            gainNode.gain.value = 3.0; 
-            source.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-        }
+    function unlockAudio() {
+        const p1 = document.getElementById('voicePlayer');
+        const p2 = document.getElementById('bgPlayer');
+        p1.play().then(()=>p1.pause());
+        p2.play().then(()=>p2.pause());
     }
 
     function startSystem() {
-        initAudioContext();
         isMonitoring = true;
-        document.getElementById('authBtn').innerText = "🔊 暴力音量監控中";
+        document.getElementById('authBtn').innerText = "✅ 系統監控中";
         document.getElementById('authBtn').style.background = "#34a853";
-        speak("語音音量已增益");
-    }
-
-    function previewSound() {
-        initAudioContext();
-        const audio = document.getElementById('audioElement');
-        audio.src = document.getElementById('soundSelect').value;
-        audio.play();
-        setTimeout(() => { audio.pause(); audio.currentTime = 0; }, 3000);
-    }
-
-    function speak(text, callback) {
-        window.speechSynthesis.cancel();
-        // 如果 AudioContext 存在，強制恢復（部分瀏覽器會自動暫停）
-        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-        
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'zh-TW';
-        msg.volume = 1.0; 
-        msg.rate = 0.8; // 略慢一點會感覺更大聲且清晰
-        msg.pitch = 1.1; // 略微提高頻率有利於穿透喇叭
-        if (callback) msg.onend = callback;
-        window.speechSynthesis.speak(msg);
+        updateUI();
     }
 
     function addNewAlarm() {
         const t = document.getElementById('alarmTime').value;
-        const n = document.getElementById('alarmName').value || "時間到了";
-        const d = document.getElementById('alarmDuration').value;
+        const v = document.getElementById('voiceSelect').value;
         const s = document.getElementById('soundSelect').value;
+        const d = document.getElementById('alarmDuration').value;
         if (!t) return alert("請設定時間");
-        alarms.push({ time: t, name: n, duration: d, sound: s, triggeredToday: false });
-        saveAndRefresh();
+        alarms.push({ time: t, voice: v, sound: s, duration: d, triggeredToday: false });
+        localStorage.setItem('savedAlarms', JSON.stringify(alarms));
+        updateUI();
     }
 
     function executeAlarm(alarm) {
         alarm.triggeredToday = true;
         document.body.classList.add('flash-bg');
         document.getElementById('stopBtn').style.display = "block";
-        let count = 0;
-        const repeatSpeak = () => {
-            if (count < 3) {
+
+        if (alarm.voice !== "none") {
+            let count = 0;
+            const vp = document.getElementById('voicePlayer');
+            vp.src = alarm.voice;
+            vp.onended = () => {
                 count++;
-                speak(alarm.name, repeatSpeak);
-            } else {
-                startRinging(alarm);
-            }
-        };
-        repeatSpeak();
+                if (count < 3) vp.play();
+                else startBgSound(alarm);
+            };
+            vp.play();
+        } else {
+            startBgSound(alarm);
+        }
     }
 
-    function startRinging(alarm) {
-        initAudioContext();
-        if (audioContext.state === 'suspended') audioContext.resume();
-        const player = document.getElementById('audioElement');
-        player.src = alarm.sound;
-        player.play();
+    function startBgSound(alarm) {
+        const bp = document.getElementById('bgPlayer');
+        bp.src = alarm.sound;
+        bp.play();
         autoStopTimer = setTimeout(killAlarm, alarm.duration * 1000);
     }
 
     function killAlarm() {
-        window.speechSynthesis.cancel();
         if (autoStopTimer) clearTimeout(autoStopTimer);
-        const player = document.getElementById('audioElement');
-        player.pause();
-        player.currentTime = 0;
+        document.getElementById('voicePlayer').pause();
+        const bp = document.getElementById('bgPlayer');
+        bp.pause();
+        bp.currentTime = 0;
         document.body.classList.remove('flash-bg');
         document.getElementById('stopBtn').style.display = "none";
     }
 
-    function deleteAlarm(index) {
-        alarms.splice(index, 1);
-        saveAndRefresh();
-    }
-
-    function saveAndRefresh() {
+    function deleteAlarm(i) {
+        alarms.splice(i, 1);
         localStorage.setItem('savedAlarms', JSON.stringify(alarms));
         updateUI();
     }
@@ -183,8 +152,8 @@
         alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
             const div = document.createElement('div');
             div.className = 'alarm-item';
-            div.innerHTML = `<span><b>${a.time}</b> - ${a.name}</span>
-                             <button onclick="deleteAlarm(${i})" style="width:auto; background:none; color:red; border:none; cursor:pointer;">刪除</button>`;
+            div.innerHTML = `<span><b>${a.time}</b> - ${a.voice}</span>
+                             <button onclick="deleteAlarm(${i})" style="color:red; border:none; background:none; cursor:pointer;">刪除</button>`;
             container.appendChild(div);
         });
     }
