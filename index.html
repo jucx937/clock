@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級鬧鐘 - 終極穩定版</title>
+    <title>班級鬧鐘 - 穩定恢復版</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; width: 1000px; max-width: 95vw; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; }
@@ -17,23 +17,25 @@
         .sound-row { display: flex; gap: 8px; align-items: flex-end; }
         .btn-listen { flex: 1; background: #6c757d; color: white; border: none; cursor: pointer; height: 42px; border-radius: 8px; }
 
-        /* 鬧鐘格子清單 */
+        /* 格子清單排版 */
         #alarmListArea { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
 
         .alarm-item { 
             text-align: left; padding: 20px; background: #fff; border: 1px solid #e8f0fe; border-radius: 15px; position: relative; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.3s ease; 
         }
-        .alarm-title { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 5px; word-break: break-all; }
-        .alarm-time { font-size: 1.8rem; font-weight: bold; color: #1a73e8; margin-bottom: 10px; }
+        /* 標題要在時間前面且加大 */
+        .alarm-title { font-size: 1.6rem; font-weight: bold; color: #333; margin-bottom: 5px; display: block; }
+        .alarm-time { font-size: 1.4rem; font-weight: bold; color: #1a73e8; margin-bottom: 10px; display: block; }
+        
         .tag { display: inline-block; background: #f0f4f8; color: #555; padding: 2px 8px; border-radius: 5px; font-size: 0.75rem; margin-right: 5px; margin-top: 5px; border: 1px solid #ddd; }
 
-        /* 狀態變色 */
-        .alarm-item.triggered { background: #eee; border-color: #ccc; opacity: 0.6; }
-        .alarm-item.triggered .alarm-title { text-decoration: line-through; color: #777; }
-        .alarm-item.triggered .alarm-time { color: #777; }
+        /* 響過後的變色狀態 */
+        .alarm-item.done { background: #f0f0f0; opacity: 0.7; border-color: #ccc; }
+        .alarm-item.done .alarm-title { text-decoration: line-through; color: #888; }
+        .alarm-item.done .alarm-time { color: #888; }
 
-        .delete-btn { position: absolute; right: 15px; top: 15px; color: #bbb; border: none; background: none; cursor: pointer; font-size: 1.2rem; padding: 5px; width: auto; }
+        .delete-btn { position: absolute; right: 15px; top: 15px; color: #bbb; border: none; background: none; cursor: pointer; font-size: 1.2rem; width: auto; padding: 5px; }
         .delete-btn:hover { color: #d93025; }
 
         .flash-bg { animation: alert-flash 0.4s infinite; }
@@ -46,8 +48,227 @@
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘系統</h2>
+    <h2 id="mainTitle">班級鬧鐘系統</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
     <div style="margin-bottom: 20px;">
-        <button id="authBtn" class="btn-main" style="width: 300px;" onclick="start
+        <button id="authBtn" class="btn-main" style="width: 300px;" onclick="startMonitoring()">1. 點擊啟動監控系統</button>
+        <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 停止響鈴 / 語音</button>
+    </div>
+
+    <div class="setup-group">
+        <label>1. 鬧鐘標題：</label>
+        <input type="text" id="alarmName" placeholder="例如：打掃時間到了">
+        
+        <label>2. 時間與播放方式：</label>
+        <div style="display:flex; gap:10px;">
+            <input type="time" id="alarmTime" style="flex:1.5">
+            <select id="playMode" style="flex:2">
+                <option value="seq">先語音 ➔ 後鈴聲</option>
+                <option value="sim">語音與鈴聲同時播放</option>
+            </select>
+        </div>
+
+        <label>3. 重複週期與長度：</label>
+        <div style="display:flex; gap:10px;">
+            <select id="repeatSelect" style="flex:2">
+                <option value="once">僅一次</option>
+                <option value="daily">每天</option>
+                <option value="weekday">平日 (週一至五)</option>
+                <option value="weekend">週末 (週六、日)</option>
+                <option value="mon">每週一</option><option value="tue">每週二</option>
+                <option value="wed">每週三</option><option value="thu">每週四</option>
+                <option value="fri">每週五</option><option value="sat">每週六</option>
+                <option value="sun">每週日</option>
+            </select>
+            <select id="alarmDuration" style="flex:1">
+                <option value="5">5秒</option>
+                <option value="10">10秒</option>
+                <option value="20">20秒</option>
+                <option value="30">30秒</option>
+            </select>
+        </div>
+
+        <label>4. 選擇鈴聲：</label>
+        <div class="sound-row">
+            <select id="soundSelect" style="flex:2.5; height:42px;">
+                <option value="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3">標準電子音</option>
+                <option value="https://assets.mixkit.co/active_storage/sfx/1017/1017-preview.mp3">清脆鐘聲</option>
+                <option value="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3">快節奏警報</option>
+                <option value="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3">柔和提示音</option>
+                <option value="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3">復古電話音</option>
+            </select>
+            <button class="btn-listen" onclick="previewSound()">🔊 試聽</button>
+        </div>
+
+        <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
+    </div>
+
+    <div id="alarmListArea"></div>
+</div>
+
+<audio id="bellPlayer" loop crossorigin="anonymous"></audio>
+
+<script>
+    let alarms = JSON.parse(localStorage.getItem('savedAlarms')) || [];
+    let isMonitoring = false;
+    let autoStopTimer = null;
+    let lastDate = new Date().getDate();
+
+    // 時鐘主迴圈
+    setInterval(() => {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        document.getElementById('liveClock').innerText = timeStr;
+
+        // 每日重置觸發狀態
+        if (now.getDate() !== lastDate) {
+            lastDate = now.getDate();
+            alarms.forEach(a => a.triggeredToday = false);
+            saveData();
+        }
+
+        if (isMonitoring) {
+            const currentHM = timeStr.substring(0, 5);
+            alarms.forEach((a, index) => {
+                if (currentHM === a.time && !a.triggeredToday && isCorrectDay(a.repeat, now.getDay())) {
+                    startAlarm(a, index);
+                }
+            });
+        }
+    }, 1000);
+
+    function isCorrectDay(mode, day) {
+        if (mode === 'once' || mode === 'daily') return true;
+        if (mode === 'weekday') return day >= 1 && day <= 5;
+        if (mode === 'weekend') return day === 0 || day === 6;
+        const map = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+        return map[mode] === day;
+    }
+
+    function startMonitoring() {
+        isMonitoring = true;
+        document.getElementById('authBtn').innerText = "✅ 監控系統運行中";
+        document.getElementById('authBtn').style.background = "#34a853";
+        updateUI();
+        speak("系統啟動");
+    }
+
+    function startAlarm(alarm, index) {
+        alarm.triggeredToday = true;
+        updateUI(); // 立即變灰
+
+        document.body.classList.add('flash-bg');
+        document.getElementById('stopBtn').style.display = "block";
+        
+        const bp = document.getElementById('bellPlayer');
+        bp.src = alarm.sound;
+        bp.loop = true;
+
+        let count = 0;
+        const playVoice = () => {
+            if (count < 3) {
+                count++;
+                speak(alarm.name, playVoice);
+            } else if (alarm.playMode === 'seq') {
+                bp.play();
+                setTimer(alarm, index);
+            }
+        };
+
+        if (alarm.playMode === 'sim') {
+            bp.play();
+            playVoice();
+            setTimer(alarm, index);
+        } else {
+            playVoice();
+        }
+    }
+
+    function setTimer(alarm, index) {
+        if (autoStopTimer) clearTimeout(autoStopTimer);
+        autoStopTimer = setTimeout(() => {
+            killAlarm();
+            if (alarm.repeat === 'once') {
+                alarms.splice(index, 1);
+            }
+            saveData();
+        }, alarm.duration * 1000);
+    }
+
+    function killAlarm() {
+        window.speechSynthesis.cancel();
+        if (autoStopTimer) clearTimeout(autoStopTimer);
+        const bp = document.getElementById('bellPlayer');
+        bp.pause();
+        bp.currentTime = 0;
+        document.body.classList.remove('flash-bg');
+        document.getElementById('stopBtn').style.display = "none";
+    }
+
+    function speak(text, callback) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        if (callback) msg.onend = callback;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function previewSound() {
+        const bp = document.getElementById('bellPlayer');
+        bp.src = document.getElementById('soundSelect').value;
+        bp.loop = false;
+        bp.play();
+        setTimeout(() => { if(!bp.loop) { bp.pause(); bp.currentTime = 0; } }, 3000);
+    }
+
+    function addNewAlarm() {
+        const t = document.getElementById('alarmTime').value;
+        if (!t) return alert("請選擇時間");
+        const n = document.getElementById('alarmName').value || "提醒";
+        const d = document.getElementById('alarmDuration').value;
+        const s = document.getElementById('soundSelect').value;
+        const sn = document.getElementById('soundSelect').options[document.getElementById('soundSelect').selectedIndex].text;
+        const r = document.getElementById('repeatSelect').value;
+        const pm = document.getElementById('playMode').value;
+
+        alarms.push({ time: t, name: n, duration: d, sound: s, soundName: sn, repeat: r, playMode: pm, triggeredToday: false });
+        saveData();
+    }
+
+    function saveData() {
+        localStorage.setItem('savedAlarms', JSON.stringify(alarms));
+        updateUI();
+    }
+
+    function updateUI() {
+        const list = document.getElementById('alarmListArea');
+        list.innerHTML = "";
+        const rMap = { once: "一次", daily: "每天", weekday: "平日", weekend: "週末", mon: "週一", tue: "週二", wed: "週三", thu: "週四", fri: "週五", sat: "週六", sun: "週日" };
+        const pMap = { seq: "先語音", sim: "同步" };
+
+        alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
+            const div = document.createElement('div');
+            div.className = `alarm-item ${a.triggeredToday ? 'done' : ''}`;
+            div.innerHTML = `
+                <button class="delete-btn" onclick="alarms.splice(${i},1);saveData();">✖</button>
+                <span class="alarm-title">${a.name}</span>
+                <span class="alarm-time">${a.time}</span>
+                <div style="font-size:0.8rem; color:#666;">
+                    ${a.triggeredToday ? '<span class="tag" style="background:#888;color:#fff;">已響領</span>' : ''}
+                    <span class="tag">🔁 ${rMap[a.repeat]}</span>
+                    <span class="tag">📻 ${pMap[a.playMode]}</span>
+                    <span class="tag">🎵 ${a.soundName}</span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function unlockAudio() {
+        const bp = document.getElementById('bellPlayer');
+        if (bp.paused) bp.play().then(()=>bp.pause()).catch(()=>{});
+    }
+</script>
+</body>
+</html>
