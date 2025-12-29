@@ -2,47 +2,41 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級多功能鬧鐘系統</title>
+    <title>班級多功能鬧鐘系統 - 簡化版</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; display: flex; justify-content: center; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #eef2f7; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; width: 450px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { color: #333; text-align: center; }
-        .time-now { font-size: 3rem; text-align: center; font-weight: bold; color: #1a73e8; margin-bottom: 20px; }
-        
+        .time-now { font-size: 3.5rem; text-align: center; font-weight: bold; color: #1a73e8; margin-bottom: 20px; }
         .setup-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #dee2e6; }
         .input-group { margin-bottom: 10px; }
         label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #555; }
-        input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.3s; }
-        .btn-add { background-color: #34a853; color: white; margin-top: 10px; }
-        .btn-system { background-color: #1a73e8; color: white; margin-bottom: 15px; }
-        .btn-system.active { background-color: #dc3545; }
-
-        .alarm-list { margin-top: 20px; }
-        .alarm-item { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .alarm-info { flex-grow: 1; }
-        .alarm-time { font-weight: bold; font-size: 1.1rem; }
-        .btn-delete { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-        .btn-preview { background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
-
-        .active-flash { animation: flash 0.5s infinite; }
-        @keyframes flash { 50% { background-color: #ffcccc; } }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; margin-top: 5px; }
+        .btn-system { background-color: #1a73e8; color: white; }
+        .btn-add { background-color: #34a853; color: white; }
+        .btn-stop { background-color: #dc3545; color: white; display: none; } /* 預設隱藏 */
+        .alarm-item { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .active-alarm { animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { background-color: #ffcccc; } }
     </style>
 </head>
 <body>
 
-<div class="container" id="mainContainer">
-    <h2>班級鬧鐘系統</h2>
+<div class="container">
+    <h2 style="text-align:center;">班級鬧鐘系統</h2>
     <div id="clock" class="time-now">00:00:00</div>
 
-    <button id="systemBtn" class="btn btn-system" onclick="toggleSystem()">1. 啟動音訊授權 (必按)</button>
+    <button id="systemBtn" class="btn btn-system" onclick="toggleSystem()">1. 點擊授權聲音並啟動</button>
+    <button id="stopBtn" class="btn btn-stop" onclick="stopAlarm()">🛑 停止鬧鐘</button>
 
     <div class="setup-box">
         <div class="input-group">
-            <label>設定時間：</label>
-            <input type="time" id="newTime" step="1">
+            <label>設定鬧鐘名稱 (選填)：</label>
+            <input type="text" id="alarmName" placeholder="例如：第一節下課">
         </div>
+        <div class="input-group">
+            <label>設定時間 (時:分)：</label>
+            <input type="time" id="newTime"> </div>
         <div class="input-group">
             <label>選擇鈴聲：</label>
             <select id="soundSelect">
@@ -54,11 +48,9 @@
             </select>
         </div>
         <button class="btn btn-add" onclick="addAlarm()">+ 新增鬧鐘</button>
-        <button class="btn" style="background:#6c757d; color:white; margin-top:5px; padding:5px;" onclick="previewSelected()">🔊 試聽選中鈴聲</button>
     </div>
 
-    <div class="alarm-list" id="alarmList">
-        </div>
+    <div id="alarmList"></div>
 </div>
 
 <audio id="globalPlayer"></audio>
@@ -67,68 +59,49 @@
     let alarms = JSON.parse(localStorage.getItem('classAlarms')) || [];
     let isSystemActive = false;
 
-    // 初始化：顯示現在時間與讀取舊有鬧鐘
-    setInterval(updateClock, 500);
+    setInterval(updateClock, 1000);
     renderAlarms();
-    document.getElementById('newTime').value = new Date().toTimeString().slice(0, 8);
 
     function updateClock() {
         const now = new Date();
-        const timeStr = now.toTimeString().split(' ')[0];
-        document.getElementById('clock').innerText = timeStr;
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        const s = now.getSeconds().toString().padStart(2, '0');
+        const currentTime = `${h}:${m}:${s}`;
+        document.getElementById('clock').innerText = currentTime;
 
         if (isSystemActive) {
-            checkAlarms(timeStr);
+            checkAlarms(h, m);
         }
     }
 
     function toggleSystem() {
-        isSystemActive = !isSystemActive;
-        const btn = document.getElementById('systemBtn');
-        if (isSystemActive) {
-            // 嘗試播放靜音以解鎖權限
-            const audio = document.getElementById('globalPlayer');
-            audio.src = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
-            audio.play().then(() => { audio.pause(); });
-            
-            btn.innerText = "系統運行中 (點擊停止)";
-            btn.classList.add('active');
-        } else {
-            btn.innerText = "1. 啟動音訊授權 (必按)";
-            btn.classList.remove('active');
-        }
+        isSystemActive = true;
+        document.getElementById('systemBtn').innerText = "系統運行中...";
+        document.getElementById('systemBtn').style.backgroundColor = "#34a853";
+        // 解鎖音訊
+        const audio = document.getElementById('globalPlayer');
+        audio.src = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+        audio.play().then(() => { audio.pause(); });
     }
 
     function addAlarm() {
         const time = document.getElementById('newTime').value;
+        const name = document.getElementById('alarmName').value || "鬧鐘";
         const sound = document.getElementById('soundSelect').value;
-        const soundName = document.getElementById('soundSelect').options[document.getElementById('soundSelect').selectedIndex].text;
-        
         if (!time) return alert("請設定時間");
-
-        alarms.push({ time, sound, soundName, hasTriggered: false });
+        alarms.push({ time, name, sound, hasTriggered: false });
         saveAndRender();
     }
 
-    function previewSelected() {
-        const sound = document.getElementById('soundSelect').value;
-        playSample(sound);
-    }
-
-    function playSample(url) {
-        const audio = document.getElementById('globalPlayer');
-        audio.src = url;
-        audio.play();
-        setTimeout(() => { audio.pause(); }, 3000); // 試聽3秒
-    }
-
-    function checkAlarms(nowStr) {
+    function checkAlarms(h, m) {
+        const currentHM = `${h}:${m}`;
         alarms.forEach(alarm => {
-            if (nowStr === alarm.time && !alarm.hasTriggered) {
+            if (currentHM === alarm.time && !alarm.hasTriggered) {
                 triggerAlarm(alarm);
             }
-            if (nowStr !== alarm.time) {
-                alarm.hasTriggered = false;
+            if (currentHM !== alarm.time) {
+                alarm.hasTriggered = false; // 分鐘過後重置標記
             }
         });
     }
@@ -140,13 +113,23 @@
         audio.loop = true;
         audio.play();
         
-        document.body.classList.add('active-flash');
-        
-        // 響鈴10秒後自動停止
+        document.getElementById('stopBtn').style.display = "block";
+        document.body.classList.add('active-alarm');
+
+        // 跳出提示視窗，點擊確定會關閉鬧鐘
         setTimeout(() => {
-            audio.pause();
-            document.body.classList.remove('active-flash');
-        }, 10000);
+            if (confirm(`⏰ 鬧鐘響了：${alarm.name}\n點擊「確定」關閉鈴聲`)) {
+                stopAlarm();
+            }
+        }, 100);
+    }
+
+    function stopAlarm() {
+        const audio = document.getElementById('globalPlayer');
+        audio.pause();
+        audio.currentTime = 0;
+        document.getElementById('stopBtn').style.display = "none";
+        document.body.classList.remove('active-alarm');
     }
 
     function deleteAlarm(index) {
@@ -166,12 +149,8 @@
             const item = document.createElement('div');
             item.className = 'alarm-item';
             item.innerHTML = `
-                <div class="alarm-info">
-                    <div class="alarm-time">${alarm.time}</div>
-                    <div style="font-size:0.8rem; color: #777;">🔔 ${alarm.soundName}</div>
-                </div>
-                <button class="btn-preview" onclick="playSample('${alarm.sound}')">▶</button>
-                <button class="btn-delete" onclick="deleteAlarm(${index})">刪除</button>
+                <div><b>${alarm.time}</b> - ${alarm.name}</div>
+                <button onclick="deleteAlarm(${index})" style="background:#ff4d4d; color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">刪除</button>
             `;
             list.appendChild(item);
         });
