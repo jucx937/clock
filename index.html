@@ -2,11 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>班級穩定版鬧鐘 - 時長控制系統</title>
+    <title>班級語音鬧鐘系統</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; padding: 20px; margin: 0; }
         .container { background: white; width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; }
-        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 20px 0; background: #e8f0fe; border-radius: 10px; padding: 10px; }
+        .clock { font-size: 3.5rem; font-weight: bold; color: #1a73e8; margin: 20px 0; background: #e8f0fe; border-radius: 10px; padding: 10px; line-height: 1.2; }
         .setup-group { background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
         label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 5px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
@@ -21,25 +21,25 @@
 <body onclick="unlockAudio()">
 
 <div class="container">
-    <h2>班級鬧鐘 (穩定系統)</h2>
+    <h2>班級語音鬧鐘系統</h2>
     <div id="liveClock" class="clock">00:00:00</div>
     
-    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 點擊啟動系統並授權</button>
-    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 立即關閉鈴聲</button>
+    <button id="authBtn" class="btn-system" onclick="startSystem()">1. 啟動系統並授權語音</button>
+    <button id="stopBtn" class="btn-stop" onclick="killAlarm()">🛑 立即關閉鈴聲/語音</button>
 
     <div class="setup-group">
-        <label>鬧鐘名稱：</label>
-        <input type="text" id="alarmName" placeholder="例如：打掃時間">
+        <label>鬧鐘標題 (會唸出來)：</label>
+        <input type="text" id="alarmName" placeholder="例如：各位老師同學，打掃時間到了">
         <label>時間 (時:分)：</label>
         <input type="time" id="alarmTime">
-        <label>響鈴長度：</label>
+        <label>響鈴長度 (語音唸完後開始計時)：</label>
         <select id="alarmDuration">
             <option value="5">5 秒</option>
             <option value="10">10 秒</option>
             <option value="15">15 秒</option>
             <option value="20">20 秒</option>
         </select>
-        <button class="btn-add" onclick="addNewAlarm()">+ 新增鬧鐘</button>
+        <button class="btn-add" onclick="addNewAlarm()">+ 新增語音鬧鐘</button>
     </div>
 
     <div id="alarmListArea"></div>
@@ -52,7 +52,7 @@
     let isMonitoring = false;
     let autoStopTimer = null;
 
-    // 啟動時間顯示與監控
+    // 啟動時間顯示
     setInterval(tick, 500);
     updateUI();
 
@@ -75,9 +75,10 @@
     function startSystem() {
         isMonitoring = true;
         const btn = document.getElementById('authBtn');
-        btn.innerText = "✅ 系統監控中";
+        btn.innerText = "✅ 監控中 (語音功能已準備)";
         btn.style.background = "#34a853";
         unlockAudio();
+        speak("鬧鐘系統已就緒");
     }
 
     function unlockAudio() {
@@ -86,9 +87,24 @@
         a.play().then(() => { a.pause(); a.currentTime = 0; });
     }
 
+    function speak(text, callback) {
+        // 先停止之前的語音，避免重疊
+        window.speechSynthesis.cancel();
+        
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        msg.rate = 0.9; // 語速稍微放慢一點更清楚
+        
+        if (callback) {
+            msg.onend = callback;
+        }
+        
+        window.speechSynthesis.speak(msg);
+    }
+
     function addNewAlarm() {
         const t = document.getElementById('alarmTime').value;
-        const n = document.getElementById('alarmName').value || "鬧鐘";
+        const n = document.getElementById('alarmName').value || "時間到了";
         const d = document.getElementById('alarmDuration').value;
         if (!t) return alert("請設定時間！");
         alarms.push({ time: t, name: n, duration: d, triggeredToday: false });
@@ -97,21 +113,40 @@
 
     function executeAlarm(alarm) {
         alarm.triggeredToday = true;
-        const player = document.getElementById('audioElement');
-        player.play();
-        
         document.body.classList.add('flash-bg');
         document.getElementById('stopBtn').style.display = "block";
 
-        // 設定自動停止
-        autoStopTimer = setTimeout(killAlarm, alarm.duration * 1000);
+        let count = 0;
+        const repeatSpeak = () => {
+            if (count < 3) {
+                count++;
+                speak(alarm.name, repeatSpeak);
+            } else {
+                // 標題唸完 3 次後，開始播放鈴聲
+                startRinging(alarm.duration);
+            }
+        };
+
+        repeatSpeak();
+    }
+
+    function startRinging(duration) {
+        const player = document.getElementById('audioElement');
+        player.play();
+        
+        // 設定鈴聲播放的自動停止時間
+        autoStopTimer = setTimeout(killAlarm, duration * 1000);
     }
 
     function killAlarm() {
+        // 停止語音
+        window.speechSynthesis.cancel();
+        // 停止鈴聲
         if (autoStopTimer) clearTimeout(autoStopTimer);
         const player = document.getElementById('audioElement');
         player.pause();
         player.currentTime = 0;
+        
         document.body.classList.remove('flash-bg');
         document.getElementById('stopBtn').style.display = "none";
     }
@@ -129,10 +164,10 @@
     function updateUI() {
         const container = document.getElementById('alarmListArea');
         container.innerHTML = "";
-        alarms.forEach((a, i) => {
+        alarms.sort((a,b) => a.time.localeCompare(b.time)).forEach((a, i) => {
             const div = document.createElement('div');
             div.className = 'alarm-item';
-            div.innerHTML = `<span><b>${a.time}</b> (${a.duration}秒) - ${a.name}</span>
+            div.innerHTML = `<span><b>${a.time}</b> - ${a.name}</span>
                              <button onclick="deleteAlarm(${i})" style="width:auto; background:none; color:red; border:none; cursor:pointer;">刪除</button>`;
             container.appendChild(div);
         });
