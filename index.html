@@ -221,28 +221,49 @@
     let lastDate = new Date().getDate();
     let isAudioUnlocked = false;
 
-    setInterval(() => {
-        const now = new Date();
-        const timeStr = now.toTimeString().split(' ')[0];
-        if(document.getElementById('liveClock')) document.getElementById('liveClock').innerText = timeStr;
-        const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        const dateStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${days[now.getDay()]}`;
-        if(document.getElementById('liveDate')) document.getElementById('liveDate').innerText = dateStr;
+    // 整合後的計時器邏輯
+function checkAndRefresh() {
+    const now = new Date();
+    
+    // 1. 更新時鐘顯示 (保持你原本的 UI 功能)
+    const timeStr = now.toTimeString().split(' ')[0];
+    if(document.getElementById('liveClock')) document.getElementById('liveClock').innerText = timeStr;
+    const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const dateStr = `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${days[now.getDay()]}`;
+    if(document.getElementById('liveDate')) document.getElementById('liveDate').innerText = dateStr;
 
-        if (now.getDate() !== lastDate) {
-            lastDate = now.getDate();
-            alarms.forEach(a => a.triggeredToday = false);
-            saveData();
-        }
-        if (isMonitoring) {
-            const currentHM = timeStr.substring(0, 5);
-            alarms.forEach((a, index) => {
-                if (currentHM === a.time && !a.triggeredToday && isCorrectDay(a.repeat, now.getDay())) {
-                    startAlarm(a, index);
-                }
-            });
-        }
-    }, 1000);
+    // 2. 跨日重設觸發狀態
+    if (now.getDate() !== lastDate) {
+        lastDate = now.getDate();
+        alarms.forEach(a => a.triggeredToday = false);
+        saveData();
+    }
+
+    // 3. 核心鬧鐘判定
+    if (isMonitoring) {
+        const currentH = now.getHours().toString().padStart(2, '0');
+        const currentM = now.getMinutes().toString().padStart(2, '0');
+        const currentHM = `${currentH}:${currentM}`; // 格式如 "08:30"
+
+        alarms.forEach((a, index) => {
+            if (currentHM === a.time && !a.triggeredToday && isCorrectDay(a.repeat, now.getDay())) {
+                console.log(`鬧鐘觸發成功: ${a.name}`);
+                startAlarm(a, index);
+            }
+        });
+    }
+}
+
+// 每秒執行一次
+setInterval(checkAndRefresh, 1000);
+
+// 當使用者從別的分頁切換回來，或是螢幕亮起時，立刻檢查一次
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        console.log("偵測到頁面喚醒，立即補檢測鬧鐘...");
+        checkAndRefresh(); 
+    }
+});
 
     function isCorrectDay(mode, day) {
         if (mode === 'once' || mode === 'daily') return true;
